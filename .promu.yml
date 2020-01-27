@@ -1,11 +1,12 @@
 go:
     cgo: false
 repository:
-    path: github.com/raffis/mongodb_query_exporter
+    path: github.com/raffis/mongodb-query-exporter
 build:
+    prefix: .
     binaries:
         - name: mongodb_query_exporter
-          path: ./main.go
+          path: .
     flags: -a -tags netgo
     ldflags: |
       -X {{repoPath}}/vendor/github.com/prometheus/common/version.Version={{.Version}}

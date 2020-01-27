@@ -1,15 +1,15 @@
 # Prometheus MongoDB query exporter
-[![Build Status](https://travis-ci.org/raffis/mongodb_query_exporter.svg)](https://travis-ci.org/raffis/mongodb_query_exporter)
-[![Go Report Card](https://goreportcard.com/badge/github.com/raffis/mongodb_query_exporter)](https://goreportcard.com/report/github.com/raffis/mongodb_query_exporter)
-[![GoDoc](https://godoc.org/github.com/raffis/mongodb_query_exporter?status.svg)](https://godoc.org/github.com/raffis/mongodb_query_exporter)
-[![Docker Pulls](https://img.shields.io/docker/pulls/githubraffis/mongodb_query_exporter.svg?maxAge=604800)](https://hub.docker.com/r/githubraffis/mongodb_query_exporter)
+[![Build Status](https://travis-ci.org/raffis/mongodb_query_exporter.svg)](https://travis-ci.org/raffis/mongodb-query-exporter)
+[![Go Report Card](https://goreportcard.com/badge/github.com/raffis/mongodb-query-exporter)](https://goreportcard.com/report/github.com/raffis/mongodb-query-exporter)
+[![GoDoc](https://godoc.org/github.com/raffis/mongodb_query_exporter?status.svg)](https://godoc.org/github.com/raffis/mongodb-query-exporter)
+[![Docker Pulls](https://img.shields.io/docker/pulls/githubraffis/mongodb_query_exporter.svg?maxAge=604800)](https://hub.docker.com/r/githubraffis/mongodb-query-exporter)
 
 MongoDB aggregation query exporter for [Prometheus](https://prometheus.io).
 
 
 ## Usage
 
-Get Prometheus MongoDB aggregation query exporter, either as a [binary](https://github.com/raffis/mongodb_query_exporter/releases/latest) or packaged as a [Docker image](https://hub.docker.com/r/githubraffis/mongodb_query_exporter).
+Get Prometheus MongoDB aggregation query exporter, either as a [binary](https://github.com/raffis/mongodb-query-exporter/releases/latest) or packaged as a [Docker image](https://hub.docker.com/r/githubraffis/mongodb-query-exporter).
 
 ```
 $ mongodb_query_exporter

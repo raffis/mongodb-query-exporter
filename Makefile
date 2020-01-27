@@ -18,11 +18,11 @@ pkgs    = $(shell $(GO) list ./... | grep -v /vendor/)
 
 PREFIX              ?= $(shell pwd)
 BIN_DIR             ?= $(shell pwd)
-DOCKER_IMAGE_NAME   ?= sql-exporter
+DOCKER_IMAGE_NAME   ?= mongodb-query-exporter
 DOCKER_IMAGE_TAG    ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
 
 
-all: format build test
+all: deps format build test
 
 style:
 	@echo ">> checking code style"
@@ -31,6 +31,10 @@ style:
 test:
 	@echo ">> running tests"
 	@$(GO) test -short -race $(pkgs)
+
+deps:
+	@echo ">> install dependencies"
+	@$(GO) mod download
 
 format:
 	@echo ">> formatting code"
