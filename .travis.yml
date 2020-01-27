@@ -2,10 +2,14 @@ language: go
 
 go: "1.12"
 
+env:
+  - GO111MODULE=on
+
 script:
   - ls -l $GOPATH/
   - make deps
   - ls -l $GOPATH/
+  - ls -l $GOPATH/src
   - make style
   - make vet
   - make test
