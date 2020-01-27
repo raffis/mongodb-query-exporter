@@ -3,6 +3,7 @@ language: go
 go: "1.12"
 
 script:
+  - make deps
   - make style
   - make vet
   - make test
