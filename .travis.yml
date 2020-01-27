@@ -3,7 +3,9 @@ language: go
 go: "1.12"
 
 script:
+  - ls -l $GOPATH/
   - make deps
+  - ls -l $GOPATH/
   - make style
   - make vet
   - make test
