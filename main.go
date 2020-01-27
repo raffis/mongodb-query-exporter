@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./cmd"
+	"github.com/raffis/mongodb-query-exporter/cmd"
 )
 
 func main() {

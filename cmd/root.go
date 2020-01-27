@@ -3,7 +3,7 @@ package cmd
 import (
 	"os/user"
 
-	"../collector"
+	"github.com/raffis/mongodb-query-exporter/collector"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
