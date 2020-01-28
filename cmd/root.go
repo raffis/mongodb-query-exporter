@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"os"
 	"os/user"
 
 	"github.com/raffis/mongodb-query-exporter/collector"
@@ -28,7 +29,7 @@ var (
 				panic(err)
 			}
 
-			level, err := log.ParseLevel(logLevel)
+			level, err := log.ParseLevel(config.LogLevel)
 			if err != nil {
 				panic(err)
 			}
@@ -50,17 +51,26 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "Define a log level (default is info)")
 	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", ":9412", "config file (default is :9412)")
 	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", "mongodb://localhost:27017", "MongoDB URI (default is mongodb://localhost:27017)")
-	rootCmd.PersistentFlags().IntVarP(&timeout, "timeout", "t", 10, "MongoDB connection timeout (default is 10 secconds")
-	viper.BindPFlag("logLevel", rootCmd.PersistentFlags().Lookup("log-level"))
+	rootCmd.PersistentFlags().IntVarP(&timeout, "timeout", "t", 3, "MongoDB connection timeout (default is 3 seconds")
+	viper.BindPFlag("log_level", rootCmd.PersistentFlags().Lookup("log-level"))
 	viper.BindPFlag("bind", rootCmd.PersistentFlags().Lookup("bind"))
 	viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
 	viper.BindPFlag("mongodb.connection_timeout", rootCmd.PersistentFlags().Lookup("timeout"))
+	viper.BindEnv("mongodb.uri", "MDBEXPORTER_MONGODB_URI")
+	viper.BindEnv("log_level", "MDBEXPORTER_LOG_LEVEL")
+	viper.BindEnv("mongodb.connection_timeout", "MDBEXPORTER_MONGODB_CONNECTION_TIMEOUT")
+	viper.BindEnv("bind", "MDBEXPORTER_BIND")
 }
 
 func initConfig() {
+	envPath := os.Getenv("MDBEXPORTER_CONFIG")
+
 	if configPath != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(configPath)
+	} else if envPath != "" {
+		// Use config file from env.
+		viper.SetConfigFile(envPath)
 	} else {
 		// Find home directory.
 		usr, err := user.Current()
@@ -72,8 +82,6 @@ func initConfig() {
 		viper.AddConfigPath(usr.HomeDir + "/.mongodb_query_exporter")
 		viper.SetConfigName("config")
 	}
-
-	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Errorf("failed to open config file %s", err)

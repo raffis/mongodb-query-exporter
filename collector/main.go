@@ -30,8 +30,8 @@ type MongoDBConfig struct {
 type Config struct {
 	MongoDBConfig MongoDBConfig `mapstructure:"mongodb"`
 	MetricOptions MetricOptions
-	Listen        string
-	LogLevel      string
+	Bind          string
+	LogLevel      string `mapstructure:"log_level"`
 	Metrics       []*Metric
 }
 
@@ -359,21 +359,43 @@ func Run(config *Config) {
 	}
 
 	// Check the connection, terminate if MongoDB is not reachable
+	log.Debugf("ping mongodb and enforce connection")
 	err = client.Ping(ctx, nil)
 	if err != nil {
 		panic(err)
 	}
 
+	log.Debugf("mongodb up an reachable, start listeners")
 	config.initializeMetrics()
 	config.startListeners()
 	config.realtimeListener()
 
-	http.Handle("/metrics", promhttp.Handler())
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { http.Error(w, "OK", http.StatusOK) })
+	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		log.Debugf("handle incoming http request /metrics")
 
-	if config.Listen == "" {
-		config.Listen = ":9412"
+		// Check the connection, if not reachable return an error 500
+		ctx, cancel := context.WithTimeout(context.Background(), config.MongoDBConfig.ConnectionTimeout*time.Second)
+		defer cancel()
+
+		err = client.Ping(ctx, nil)
+		if err != nil {
+			log.Errorf("mongodb not reachable (ping) return 500 Internal Server Error, %s", err)
+			w.WriteHeader(500)
+		} else {
+			promhttp.Handler().ServeHTTP(w, r)
+		}
+	})
+
+	if config.Bind == "" {
+		config.Bind = ":9412"
 	}
 
-	log.Printf("start http listener on %s", config.Listen)
-	http.ListenAndServe(config.Listen, nil)
+	log.Printf("start http listener on %s", config.Bind)
+	err = http.ListenAndServe(config.Bind, nil)
+
+	//if the port is already in use or another fatal error panic
+	if err != nil {
+		panic(err)
+	}
 }

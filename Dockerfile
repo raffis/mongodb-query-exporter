@@ -6,8 +6,7 @@ WORKDIR /go/src/github.com/raffis/mongodb-query-exporter
 RUN make
 
 FROM        quay.io/prometheus/busybox:glibc
-MAINTAINER  Raffael Sahli <public@raffaelsahli.com>
-COPY        --from=builder /go/src/github.com/raffis/prom-mongodb-query-exporter /bin/mongodb_query_exporter
+COPY        --from=builder /go/src/github.com/raffis/mongodb-query-exporter/mongodb_query_exporter /bin/mongodb_query_exporter
 
-EXPOSE      9399
+EXPOSE      9412
 ENTRYPOINT [ "/bin/mongodb_query_exporter" ]
