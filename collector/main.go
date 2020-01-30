@@ -288,6 +288,10 @@ func (config *Config) realtimeListener() error {
 
 METRICS:
 	for _, metric := range config.Metrics {
+		if metric.Realtime == false {
+			continue
+		}
+
 		//start only one changestream per database/collection
 		if val, ok := cursors[metric.Database]; ok {
 			for _, coll := range val {
