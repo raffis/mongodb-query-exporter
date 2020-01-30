@@ -393,7 +393,7 @@ func Run(config *Config) {
 		config.MongoDBConfig.URI = "mongodb://localhost:27017"
 	}
 
-	log.Printf("connect to mongodb using uri %s, connect_timeout=%d", config.MongoDBConfig.URI, config.MongoDBConfig.ConnectionTimeout)
+	log.Printf("connect to mongodb, connect_timeout=%d", config.MongoDBConfig.ConnectionTimeout)
 	var err error
 	client, err = mongo.Connect(ctx, options.Client().ApplyURI(config.MongoDBConfig.URI))
 	if err != nil {
