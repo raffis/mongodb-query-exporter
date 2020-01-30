@@ -23,15 +23,15 @@ var (
 
 type MongoDBConfig struct {
 	URI               string
-	MaxConnections    int32         `mapstructure:"max_connections"`
-	ConnectionTimeout time.Duration `mapstructure:"connection_timeout"`
+	MaxConnections    int32
+	ConnectionTimeout time.Duration
 }
 
 type Config struct {
 	MongoDBConfig MongoDBConfig `mapstructure:"mongodb"`
 	MetricOptions MetricOptions
 	Bind          string
-	LogLevel      string `mapstructure:"log_level"`
+	LogLevel      string
 	Metrics       []*Metric
 }
 
@@ -42,18 +42,20 @@ type MetricOptions struct {
 }
 
 type Metric struct {
-	Name       string
-	Type       string
-	Help       string
-	Value      string
-	CacheTime  int64
-	Realtime   bool
-	Labels     []string
-	Database   string
-	Collection string
-	Pipeline   string
-	metric     interface{}
-	sleep      time.Duration
+	Name        string
+	Type        string
+	Help        string
+	Value       string
+	CacheTime   int64
+	ConstLabels prometheus.Labels
+	Realtime    bool
+	Labels      []string
+	Database    string
+	Collection  string
+	Pipeline    string
+	metric      interface{}
+	sleep       time.Duration
+	value       *float64
 }
 
 type ChangeStreamEventNamespace struct {
@@ -103,7 +105,7 @@ func (config *Config) initializeMetrics() {
 			log.Errorf("failed to initialize metric %s with error %s", metric.Name, err)
 		} else {
 			go func(metric *Metric) {
-				err := metric.fetchValue()
+				err := metric.update()
 
 				if err != nil {
 					log.Errorf("failed to fetch initial value for %s with error %s", metric.Name, err)
@@ -113,20 +115,33 @@ func (config *Config) initializeMetrics() {
 	}
 }
 
+func (metric *Metric) getOptions() interface{} {
+	switch metric.Type {
+	case typeGauge:
+		return prometheus.GaugeOpts{
+			Name:        metric.Name,
+			Help:        metric.Help,
+			ConstLabels: metric.ConstLabels,
+		}
+	case typeCounter:
+		return prometheus.CounterOpts{
+			Name:        metric.Name,
+			Help:        metric.Help,
+			ConstLabels: metric.ConstLabels,
+		}
+	default:
+		return errors.New("unknown metric type provided. Only [gauge,conuter] are valid options")
+	}
+}
+
 func (metric *Metric) initializeLabeledMetric() error {
 	switch metric.Type {
 	case typeGauge:
-		metric.metric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Name: metric.Name,
-			Help: metric.Help,
-		}, metric.Labels)
+		metric.metric = promauto.NewGaugeVec(metric.getOptions().(prometheus.GaugeOpts), metric.Labels)
 	case typeCounter:
-		metric.metric = promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: metric.Name,
-			Help: metric.Help,
-		}, metric.Labels)
+		metric.metric = promauto.NewCounterVec(metric.getOptions().(prometheus.CounterOpts), metric.Labels)
 	default:
-		return errors.New("unknown metric type provided. Only [gauge,conuter,histogram,aa] are valid options")
+		return errors.New("unknown metric type provided. Only [gauge,counter] are valid options")
 	}
 
 	return nil
@@ -135,17 +150,11 @@ func (metric *Metric) initializeLabeledMetric() error {
 func (metric *Metric) initializeUnlabeledMetric() error {
 	switch metric.Type {
 	case typeGauge:
-		metric.metric = promauto.NewGauge(prometheus.GaugeOpts{
-			Name: metric.Name,
-			Help: metric.Help,
-		})
+		metric.metric = promauto.NewGauge(metric.getOptions().(prometheus.GaugeOpts))
 	case typeCounter:
-		metric.metric = promauto.NewCounter(prometheus.CounterOpts{
-			Name: metric.Name,
-			Help: metric.Help,
-		})
+		metric.metric = promauto.NewCounter(metric.getOptions().(prometheus.CounterOpts))
 	default:
-		return errors.New("unknown metric type provided. Only [gauge,conuter,histogram,aa] are valid options")
+		return errors.New("unknown metric type provided. Only [gauge,counter] are valid options")
 	}
 
 	return nil
@@ -165,7 +174,7 @@ func (config *Config) startListeners() {
 
 		go func(metric *Metric) {
 			for {
-				err := metric.fetchValue()
+				err := metric.update()
 
 				if err != nil {
 					log.Errorf("failed to handle metric %s, abort listen on metric %s", err, metric.Name)
@@ -179,7 +188,7 @@ func (config *Config) startListeners() {
 	}
 }
 
-func (metric *Metric) fetchValue() error {
+func (metric *Metric) update() error {
 	var pipeline bson.A
 	log.Debugf("aggregate mongodb pipeline %s", metric.Pipeline)
 	err := bson.UnmarshalExtJSON([]byte(metric.Pipeline), false, &pipeline)
@@ -208,7 +217,7 @@ func (metric *Metric) fetchValue() error {
 			continue
 		}
 
-		err = metric.update(result)
+		err = metric.updateValue(result)
 		if err != nil {
 			log.Errorf("failed update record %s", err)
 		}
@@ -217,31 +226,60 @@ func (metric *Metric) fetchValue() error {
 	return nil
 }
 
-func (metric *Metric) update(result AggregationResult) error {
+func (metric *Metric) updateValue(result AggregationResult) error {
+	if len(metric.Labels) == 0 {
+		return metric.updateUnlabeled(result)
+	}
+
+	return metric.updateLabeled(result)
+}
+
+func (metric *Metric) updateUnlabeled(result AggregationResult) error {
 	value, err := metric.getValue(result)
 	if err != nil {
 		return err
 	}
 
-	if len(metric.Labels) == 0 {
-		switch metric.Type {
-		case typeGauge:
-			metric.metric.(prometheus.Gauge).Set(*value)
-		case typeCounter:
-			metric.metric.(prometheus.Counter).Add(*value)
-		}
-	} else {
-		labels, err := metric.getLabels(result)
-		if err != nil {
-			return err
+	switch metric.Type {
+	case typeGauge:
+		metric.metric.(prometheus.Gauge).Set(*value)
+	case typeCounter:
+		new := *value - *metric.value
+		metric.metric.(prometheus.Counter).Add(new)
+		metric.value = &new
+	}
+
+	return nil
+}
+
+func (metric *Metric) updateLabeled(result AggregationResult) error {
+	value, err := metric.getValue(result)
+	if err != nil {
+		return err
+	}
+
+	labels, err := metric.getLabels(result)
+	if err != nil {
+		return err
+	}
+
+	switch metric.Type {
+	case typeGauge:
+		metric.metric.(*prometheus.GaugeVec).With(labels).Set(*value)
+	case typeCounter:
+		var new float64
+		if metric.value == nil {
+			new = *value
+		} else {
+			new = *value - *metric.value
 		}
 
-		switch metric.Type {
-		case typeGauge:
-			metric.metric.(*prometheus.GaugeVec).With(labels).Set(*value)
-		case typeCounter:
-			metric.metric.(*prometheus.CounterVec).With(labels).Add(*value)
+		metric.value = &new
+		if new <= *metric.value {
+			return fmt.Errorf("failed to increase counter for %s, counter can not be decreased", metric.Name)
 		}
+
+		metric.metric.(*prometheus.CounterVec).With(labels).Add(new)
 	}
 
 	return nil
@@ -331,7 +369,7 @@ METRICS:
 
 				for _, metric := range config.Metrics {
 					if metric.Realtime == true && metric.Database == result.NS.DB && metric.Collection == result.NS.Coll {
-						err := metric.fetchValue()
+						err := metric.update()
 
 						if err != nil {
 							log.Errorf("failed to update metric %s, failed with error %s", metric.Name, err)

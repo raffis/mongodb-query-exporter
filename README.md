@@ -6,6 +6,12 @@
 
 MongoDB aggregation query exporter for [Prometheus](https://prometheus.io).
 
+## Features
+
+* Support for gauge and counter metrics
+* Multiple metrics for different db/collections
+* Pull interval
+* Support for (soft) realtime metric updates (>= MongoDB 3.6)
 
 ## Usage
 
@@ -40,7 +46,7 @@ If the provided MongoDB URI is not reachable by the exporter /metrics will repor
 causing Prometheus to record `up=0` for that scrape.
 
 
-
+Example:
 **`./config.yml`**
 
 ```yaml
@@ -48,17 +54,20 @@ bind: 0.0.0.0:9412
 logLevel: info
 mongodb:
   uri: mongodb://localhost:27017
-  connection_timeout: 10
-  max_connection: 3
+  connectionTimeout: 10
+  maxConnection: 3
   defaultCacheTime: 5
 metrics:
 - name: myapp_simplevalue_total
   type: gauge
   help: 'Simple gauge metric'
   value: total
+  labels: []
   cacheTime: 10
+  constLabels: []
   database: mydb
-  collection: objects
+  collection: objects  
+  realtime: false
   pipeline: |
     [
       {"$count":"total"}
@@ -69,8 +78,10 @@ metrics:
   value: total
   cacheTime: 5
   labels: [type,status]
+  constLabels: []
   database: mydb
   collection: queue
+  realtime: true
   pipeline: |
     [
       {"$group": {
@@ -92,7 +103,7 @@ metrics:
                  { "case": { "$eq": ["$_id.status", 5] }, "then": "canceled" },
                  { "case": { "$eq": ["$_id.status", 6] }, "then": "timeout" }
               ],
-              "default": { "then": "unknown" }
+              "default": "unknown"
           }}
       }}
     ]
