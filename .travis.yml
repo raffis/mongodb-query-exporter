@@ -14,7 +14,7 @@ script:
 - if [[ "${version:0:1}" == "v" ]]; then version=${version:1}; fi;
 - if [ "$TRAVIS_TAG" != "" ]; then make docker IMAGE_TAG=$version; fi
 after_script:
-- $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+- $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci
 deploy:
   provider: releases
   api_key:
