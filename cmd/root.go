@@ -35,7 +35,7 @@ var (
 			}
 
 			log.SetLevel(level)
-			collector.Run(&config)
+			collector.RunAndBind(&config)
 		},
 	}
 )

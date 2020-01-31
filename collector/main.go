@@ -2,11 +2,12 @@ package collector
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -17,14 +18,18 @@ import (
 )
 
 var (
-	ctx    context.Context
-	client *mongo.Client
+	ctx context.Context
 )
 
 type MongoDBConfig struct {
 	URI               string
 	MaxConnections    int32
 	ConnectionTimeout time.Duration
+}
+
+type Collector struct {
+	Driver Driver
+	Config *Config
 }
 
 type Config struct {
@@ -58,61 +63,54 @@ type Metric struct {
 	value       *float64
 }
 
-type ChangeStreamEventNamespace struct {
-	DB   string
-	Coll string
-}
-
-type ChangeStreamEvent struct {
-	NS *ChangeStreamEventNamespace
-}
-
-type AggregationResult map[string]interface{}
-
 const (
 	typeGauge   = "gauge"
 	typeCounter = "counter"
 )
 
-func (config *Config) initializeMetrics() {
-	if len(config.Metrics) == 0 {
+func (collector *Collector) initializeMetrics() {
+	if len(collector.Config.Metrics) == 0 {
 		log.Warning("no metrics have been configured")
 		return
 	}
 
-	for _, metric := range config.Metrics {
+	for _, metric := range collector.Config.Metrics {
 		log.Infof("initialize metric %s", metric.Name)
+		go func(metric *Metric) {
+			err := collector.initializeMetric(metric)
 
-		//set cache time (pull interval)
-		if metric.CacheTime > 0 {
-			metric.sleep = time.Duration(metric.CacheTime) * time.Second
-		} else if config.MetricOptions.DefaultCacheTime > 0 {
-			metric.sleep = time.Duration(config.MetricOptions.DefaultCacheTime) * time.Second
-		} else {
-			metric.sleep = 5 * time.Second
-		}
-
-		//initialize prometheus metric
-		var err error
-		if len(metric.Labels) == 0 {
-			err = metric.initializeUnlabeledMetric()
-		} else {
-			err = metric.initializeLabeledMetric()
-		}
-
-		//fetch initial value
-		if err != nil {
-			log.Errorf("failed to initialize metric %s with error %s", metric.Name, err)
-		} else {
-			go func(metric *Metric) {
-				err := metric.update()
-
-				if err != nil {
-					log.Errorf("failed to fetch initial value for %s with error %s", metric.Name, err)
-				}
-			}(metric)
-		}
+			if err != nil {
+				log.Errorf("failed to initialize metric %s with error %s", metric.Name, err)
+			}
+		}(metric)
 	}
+}
+
+func (collector *Collector) initializeMetric(metric *Metric) error {
+	log.Infof("initialize metric %s", metric.Name)
+
+	//set cache time (pull interval)
+	if metric.CacheTime > 0 {
+		metric.sleep = time.Duration(metric.CacheTime) * time.Second
+	} else if collector.Config.MetricOptions.DefaultCacheTime > 0 {
+		metric.sleep = time.Duration(collector.Config.MetricOptions.DefaultCacheTime) * time.Second
+	} else {
+		metric.sleep = 5 * time.Second
+	}
+
+	//initialize prometheus metric
+	var err error
+	if len(metric.Labels) == 0 {
+		err = metric.initializeUnlabeledMetric()
+	} else {
+		err = metric.initializeLabeledMetric()
+	}
+
+	if err != nil {
+		return fmt.Errorf("failed to initialize metric %s with error %s", metric.Name, err)
+	}
+
+	return collector.updateMetric(metric)
 }
 
 func (metric *Metric) getOptions() interface{} {
@@ -160,8 +158,8 @@ func (metric *Metric) initializeUnlabeledMetric() error {
 	return nil
 }
 
-func (config *Config) startListeners() {
-	for _, metric := range config.Metrics {
+func (collector *Collector) startListeners() {
+	for _, metric := range collector.Config.Metrics {
 		//If the metric is realtime we start a mongodb changestream and wait for changes instead pull (interval)
 		if metric.Realtime == true {
 			continue
@@ -174,7 +172,7 @@ func (config *Config) startListeners() {
 
 		go func(metric *Metric) {
 			for {
-				err := metric.update()
+				err := collector.updateMetric(metric)
 
 				if err != nil {
 					log.Errorf("failed to handle metric %s, abort listen on metric %s", err, metric.Name)
@@ -188,24 +186,22 @@ func (config *Config) startListeners() {
 	}
 }
 
-func (metric *Metric) update() error {
+func (collector *Collector) updateMetric(metric *Metric) error {
 	var pipeline bson.A
 	log.Debugf("aggregate mongodb pipeline %s", metric.Pipeline)
 	err := bson.UnmarshalExtJSON([]byte(metric.Pipeline), false, &pipeline)
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to decode json aggregation pipeline")
 	}
 
-	cursor, err := client.Database(metric.Database).Collection(metric.Collection).Aggregate(
-		context.Background(),
-		pipeline,
-	)
+	cursor, err := collector.Driver.Aggregate(context.Background(), metric.Database, metric.Collection, pipeline)
 
 	if err != nil {
 		return err
 	}
 
+	var errors *multierror.Error
 	for cursor.Next(context.TODO()) {
 		var result AggregationResult
 
@@ -213,17 +209,19 @@ func (metric *Metric) update() error {
 		log.Debugf("found record %s from metric %s", result, metric.Name)
 
 		if err != nil {
+			errors = multierror.Append(errors, err)
 			log.Errorf("failed decode record %s", err)
 			continue
 		}
 
 		err = metric.updateValue(result)
 		if err != nil {
+			errors = multierror.Append(errors, err)
 			log.Errorf("failed update record %s", err)
 		}
 	}
 
-	return nil
+	return errors.ErrorOrNil()
 }
 
 func (metric *Metric) updateValue(result AggregationResult) error {
@@ -244,11 +242,30 @@ func (metric *Metric) updateUnlabeled(result AggregationResult) error {
 	case typeGauge:
 		metric.metric.(prometheus.Gauge).Set(*value)
 	case typeCounter:
-		new := *value - *metric.value
-		metric.metric.(prometheus.Counter).Add(new)
-		metric.value = &new
+		err = metric.increaseCounterValue(value)
+		if err != nil {
+			return err
+		}
+
+		metric.metric.(prometheus.Counter).Add(*metric.value)
 	}
 
+	return nil
+}
+
+func (metric *Metric) increaseCounterValue(value *float64) error {
+	var new float64
+	if metric.value == nil {
+		new = *value
+	} else {
+		new = *value - *metric.value
+	}
+
+	if metric.value != nil && new <= *metric.value {
+		return fmt.Errorf("failed to increase counter for %s, counter can not be decreased", metric.Name)
+	}
+
+	metric.value = &new
 	return nil
 }
 
@@ -267,27 +284,28 @@ func (metric *Metric) updateLabeled(result AggregationResult) error {
 	case typeGauge:
 		metric.metric.(*prometheus.GaugeVec).With(labels).Set(*value)
 	case typeCounter:
-		var new float64
-		if metric.value == nil {
-			new = *value
-		} else {
-			new = *value - *metric.value
+		err = metric.increaseCounterValue(value)
+		if err != nil {
+			return err
 		}
 
-		metric.value = &new
-		if new <= *metric.value {
-			return fmt.Errorf("failed to increase counter for %s, counter can not be decreased", metric.Name)
-		}
-
-		metric.metric.(*prometheus.CounterVec).With(labels).Add(new)
+		metric.metric.(*prometheus.CounterVec).With(labels).Add(*metric.value)
 	}
 
 	return nil
 }
 
 func (metric *Metric) getValue(result AggregationResult) (*float64, error) {
+	fmt.Printf("%#v\n", result)
+
 	if val, ok := result[metric.Value]; ok {
 		switch val.(type) {
+		case float32:
+			value := float64(val.(float32))
+			return &value, nil
+		case float64:
+			value := val.(float64)
+			return &value, nil
 		case int32:
 			value := float64(val.(int32))
 			return &value, nil
@@ -321,11 +339,11 @@ func (metric *Metric) getLabels(result AggregationResult) (prometheus.Labels, er
 	return labels, nil
 }
 
-func (config *Config) realtimeListener() error {
+func (collector *Collector) realtimeListener() error {
 	var cursors = make(map[string][]string)
 
 METRICS:
-	for _, metric := range config.Metrics {
+	for _, metric := range collector.Config.Metrics {
 		if metric.Realtime == false {
 			continue
 		}
@@ -346,7 +364,7 @@ METRICS:
 		//start changestream for each database/collection
 		go func(metric *Metric) {
 			log.Infof("start changestream on %s.%s, waiting for changes", metric.Database, metric.Collection)
-			cursor, err := client.Database(metric.Database).Collection(metric.Collection).Watch(ctx, mongo.Pipeline{})
+			cursor, err := collector.Driver.Watch(ctx, metric.Database, metric.Collection, mongo.Pipeline{})
 
 			if err != nil {
 				log.Errorf("failed to start changestream listener %s", err)
@@ -367,9 +385,9 @@ METRICS:
 
 				log.Debugf("found new changestream event in %s.%s", metric.Database, metric.Collection)
 
-				for _, metric := range config.Metrics {
+				for _, metric := range collector.Config.Metrics {
 					if metric.Realtime == true && metric.Database == result.NS.DB && metric.Collection == result.NS.Coll {
-						err := metric.update()
+						err := collector.updateMetric(metric)
 
 						if err != nil {
 							log.Errorf("failed to update metric %s, failed with error %s", metric.Name, err)
@@ -383,9 +401,16 @@ METRICS:
 	return nil
 }
 
+//Initialize metrics and start listeners
+func (collector *Collector) Run() {
+	collector.initializeMetrics()
+	collector.startListeners()
+	collector.realtimeListener()
+}
+
 // Run executes a blocking http server. Starts the http listener with the /metrics endpoint
 // and parses all configured metrics passed by config
-func Run(config *Config) {
+func RunAndBind(config *Config) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.MongoDBConfig.ConnectionTimeout*time.Second)
 	defer cancel()
 
@@ -395,22 +420,25 @@ func Run(config *Config) {
 
 	log.Printf("connect to mongodb, connect_timeout=%d", config.MongoDBConfig.ConnectionTimeout)
 	var err error
-	client, err = mongo.Connect(ctx, options.Client().ApplyURI(config.MongoDBConfig.URI))
+
+	collector := &Collector{}
+	collector.Driver = &MongoDBDriver{}
+	err = collector.Driver.Connect(ctx, options.Client().ApplyURI(config.MongoDBConfig.URI))
+	collector.Config = config
+
 	if err != nil {
 		panic(err)
 	}
 
 	// Check the connection, terminate if MongoDB is not reachable
 	log.Debugf("ping mongodb and enforce connection")
-	err = client.Ping(ctx, nil)
+	err = collector.Driver.Ping(ctx, nil)
 	if err != nil {
 		panic(err)
 	}
 
 	log.Debugf("mongodb up an reachable, start listeners")
-	config.initializeMetrics()
-	config.startListeners()
-	config.realtimeListener()
+	collector.Run()
 
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { http.Error(w, "OK", http.StatusOK) })
 	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
@@ -420,7 +448,7 @@ func Run(config *Config) {
 		ctx, cancel := context.WithTimeout(context.Background(), config.MongoDBConfig.ConnectionTimeout*time.Second)
 		defer cancel()
 
-		err = client.Ping(ctx, nil)
+		err = collector.Driver.Ping(ctx, nil)
 		if err != nil {
 			log.Errorf("mongodb not reachable (ping) return 500 Internal Server Error, %s", err)
 			w.WriteHeader(500)
