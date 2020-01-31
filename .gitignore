@@ -1,3 +1,4 @@
 mongodb_query_exporter
 goreportcard.db
 config.yaml
+coverage.out

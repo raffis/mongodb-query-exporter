@@ -296,8 +296,6 @@ func (metric *Metric) updateLabeled(result AggregationResult) error {
 }
 
 func (metric *Metric) getValue(result AggregationResult) (*float64, error) {
-	fmt.Printf("%#v\n", result)
-
 	if val, ok := result[metric.Value]; ok {
 		switch val.(type) {
 		case float32:

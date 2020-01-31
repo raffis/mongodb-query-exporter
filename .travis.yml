@@ -2,6 +2,9 @@ language: go
 go: '1.12'
 env:
 - GO111MODULE=on
+before_script:
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
 script:
 - make deps
 - make style
@@ -10,6 +13,8 @@ script:
 - make build
 - if [[ "${version:0:1}" == "v" ]]; then version=${version:1}; fi;
 - if [ "$TRAVIS_TAG" != "" ]; then make docker IMAGE_TAG=$version; fi
+after_script:
+- $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
 deploy:
   provider: releases
   api_key:

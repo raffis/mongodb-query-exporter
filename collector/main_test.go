@@ -1,8 +1,15 @@
 package collector
 
 import (
+	"io/ioutil"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 )
+
+func init() {
+	log.SetOutput(ioutil.Discard)
+}
 
 func buildMock(docs []interface{}) *mockMongoDBDriver {
 	return &mockMongoDBDriver{

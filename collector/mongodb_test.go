@@ -2,7 +2,6 @@ package collector
 
 import (
 	"context"
-	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,7 +20,6 @@ type mockCursor struct {
 }
 
 func (cursor *mockCursor) Decode(val interface{}) error {
-	fmt.Printf("%#v\n", cursor.Current)
 	*val.(*AggregationResult) = cursor.Current.(AggregationResult)
 	return nil
 }
