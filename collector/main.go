@@ -21,17 +21,20 @@ var (
 	ctx context.Context
 )
 
+// MongoDB client options
 type MongoDBConfig struct {
 	URI               string
 	MaxConnections    int32
 	ConnectionTimeout time.Duration
 }
 
+// The collector holds the configureation and the mongodb driver
 type Collector struct {
 	Driver Driver
 	Config *Config
 }
 
+// Global configuration which holds all monitored aggregations
 type Config struct {
 	MongoDBConfig MongoDBConfig `mapstructure:"mongodb"`
 	MetricOptions MetricOptions
@@ -40,12 +43,14 @@ type Config struct {
 	Metrics       []*Metric
 }
 
+// Metric overall defaults
 type MetricOptions struct {
 	DefaultCacheTime  int64
 	DefaultDatabase   string
 	DefaultCollection string
 }
 
+// MongoDB aggregation metric
 type Metric struct {
 	Name        string
 	Type        string
@@ -89,7 +94,7 @@ func (collector *Collector) initializeMetrics() {
 func (collector *Collector) initializeMetric(metric *Metric) error {
 	log.Infof("initialize metric %s", metric.Name)
 
-	//set cache time (pull interval)
+	// Set cache time (pull interval)
 	if metric.CacheTime > 0 {
 		metric.sleep = time.Duration(metric.CacheTime) * time.Second
 	} else if collector.Config.MetricOptions.DefaultCacheTime > 0 {
@@ -98,7 +103,7 @@ func (collector *Collector) initializeMetric(metric *Metric) error {
 		metric.sleep = 5 * time.Second
 	}
 
-	//initialize prometheus metric
+	// Initialize prometheus metric
 	var err error
 	if len(metric.Labels) == 0 {
 		err = metric.initializeUnlabeledMetric()
@@ -158,34 +163,6 @@ func (metric *Metric) initializeUnlabeledMetric() error {
 	return nil
 }
 
-func (collector *Collector) startListeners() {
-	for _, metric := range collector.Config.Metrics {
-		//If the metric is realtime we start a mongodb changestream and wait for changes instead pull (interval)
-		if metric.Realtime == true {
-			continue
-		}
-
-		//do not start listeneres for uninitialized metrics due errors
-		if metric.metric == nil {
-			continue
-		}
-
-		go func(metric *Metric) {
-			for {
-				err := collector.updateMetric(metric)
-
-				if err != nil {
-					log.Errorf("failed to handle metric %s, abort listen on metric %s", err, metric.Name)
-					return
-				}
-
-				log.Debugf("wait %ds to refresh metric %s", metric.CacheTime, metric.Name)
-				time.Sleep(metric.sleep)
-			}
-		}(metric)
-	}
-}
-
 func (collector *Collector) updateMetric(metric *Metric) error {
 	var pipeline bson.A
 	log.Debugf("aggregate mongodb pipeline %s", metric.Pipeline)
@@ -201,27 +178,34 @@ func (collector *Collector) updateMetric(metric *Metric) error {
 		return err
 	}
 
-	var errors *multierror.Error
+	var multierr *multierror.Error
+	var i int
+
 	for cursor.Next(context.TODO()) {
+		i++
 		var result AggregationResult
 
 		err := cursor.Decode(&result)
 		log.Debugf("found record %s from metric %s", result, metric.Name)
 
 		if err != nil {
-			errors = multierror.Append(errors, err)
+			multierr = multierror.Append(multierr, err)
 			log.Errorf("failed decode record %s", err)
 			continue
 		}
 
 		err = metric.updateValue(result)
 		if err != nil {
-			errors = multierror.Append(errors, err)
+			multierr = multierror.Append(multierr, err)
 			log.Errorf("failed update record %s", err)
 		}
 	}
 
-	return errors.ErrorOrNil()
+	if i == 0 {
+		return fmt.Errorf("metric %s aggregation returned an emtpy result set", metric.Name)
+	}
+
+	return multierr.ErrorOrNil()
 }
 
 func (metric *Metric) updateValue(result AggregationResult) error {
@@ -337,7 +321,7 @@ func (metric *Metric) getLabels(result AggregationResult) (prometheus.Labels, er
 	return labels, nil
 }
 
-func (collector *Collector) realtimeListener() error {
+func (collector *Collector) startPushListeners() error {
 	var cursors = make(map[string][]string)
 
 METRICS:
@@ -361,37 +345,10 @@ METRICS:
 
 		//start changestream for each database/collection
 		go func(metric *Metric) {
-			log.Infof("start changestream on %s.%s, waiting for changes", metric.Database, metric.Collection)
-			cursor, err := collector.Driver.Watch(ctx, metric.Database, metric.Collection, mongo.Pipeline{})
+			err := collector.realtimeUpdate(metric)
 
 			if err != nil {
-				log.Errorf("failed to start changestream listener %s", err)
-				return
-			}
-
-			defer cursor.Close(ctx)
-
-			for cursor.Next(context.TODO()) {
-				var result ChangeStreamEvent
-
-				err := cursor.Decode(&result)
-
-				if err != nil {
-					log.Errorf("failed decode record %s", err)
-					continue
-				}
-
-				log.Debugf("found new changestream event in %s.%s", metric.Database, metric.Collection)
-
-				for _, metric := range collector.Config.Metrics {
-					if metric.Realtime == true && metric.Database == result.NS.DB && metric.Collection == result.NS.Coll {
-						err := collector.updateMetric(metric)
-
-						if err != nil {
-							log.Errorf("failed to update metric %s, failed with error %s", metric.Name, err)
-						}
-					}
-				}
+				log.Errorf("failed to handle realtime updates for %s, error %s", metric.Name, err)
 			}
 		}(metric)
 	}
@@ -399,11 +356,79 @@ METRICS:
 	return nil
 }
 
-//Initialize metrics and start listeners
+func (collector *Collector) startPullListeners() {
+	for _, metric := range collector.Config.Metrics {
+		//If the metric is realtime we start a mongodb changestream and wait for changes instead pull (interval)
+		if metric.Realtime == true {
+			continue
+		}
+
+		//do not start listeneres for uninitialized metrics due errors
+		if metric.metric == nil {
+			continue
+		}
+
+		go func(metric *Metric) {
+			for {
+				err := collector.updateMetric(metric)
+
+				if err != nil {
+					log.Errorf("failed to handle metric %s, abort listen on metric %s", err, metric.Name)
+					return
+				}
+
+				log.Debugf("wait %ds to refresh metric %s", metric.CacheTime, metric.Name)
+				time.Sleep(metric.sleep)
+			}
+		}(metric)
+	}
+}
+
+func (collector *Collector) realtimeUpdate(metric *Metric) error {
+	log.Infof("start changestream on %s.%s, waiting for changes", metric.Database, metric.Collection)
+	cursor, err := collector.Driver.Watch(ctx, metric.Database, metric.Collection, mongo.Pipeline{})
+
+	if err != nil {
+		return fmt.Errorf("failed to start changestream listener %s", err)
+	}
+
+	defer cursor.Close(ctx)
+
+	for cursor.Next(context.TODO()) {
+		var result ChangeStreamEvent
+
+		err := cursor.Decode(&result)
+		if err != nil {
+			log.Errorf("failed decode record %s", err)
+			continue
+		}
+
+		log.Debugf("found new changestream event in %s.%s", metric.Database, metric.Collection)
+
+		var errors *multierror.Error
+
+		for _, metric := range collector.Config.Metrics {
+			if metric.Realtime == true && metric.Database == result.NS.DB && metric.Collection == result.NS.Coll {
+				err := collector.updateMetric(metric)
+
+				if err != nil {
+					errors = multierror.Append(errors, fmt.Errorf("failed to update metric %s, failed with error %s", metric.Name, err))
+					log.Errorf("failed to update metric %s, failed with error %s", metric.Name, err)
+				}
+			}
+		}
+
+		return errors.ErrorOrNil()
+	}
+
+	return nil
+}
+
+// Initialize metrics and start listeners
 func (collector *Collector) Run() {
 	collector.initializeMetrics()
-	collector.startListeners()
-	collector.realtimeListener()
+	collector.startPullListeners()
+	collector.startPushListeners()
 }
 
 // Run executes a blocking http server. Starts the http listener with the /metrics endpoint
@@ -462,7 +487,7 @@ func RunAndBind(config *Config) {
 	log.Printf("start http listener on %s", config.Bind)
 	err = http.ListenAndServe(config.Bind, nil)
 
-	//if the port is already in use or another fatal error panic
+	// If the port is already in use or another fatal error panic
 	if err != nil {
 		panic(err)
 	}

@@ -18,6 +18,9 @@ MongoDB aggregation query exporter for [Prometheus](https://prometheus.io).
 
 Get Prometheus MongoDB aggregation query exporter, either as a [binary](https://github.com/raffis/mongodb-query-exporter/releases/latest) or packaged as a [Docker image](https://hub.docker.com/r/githubraffis/mongodb-query-exporter).
 
+Note that this is not a replacement form the MongoDB exporter. This app allows it to expose custom MongoDB metrics based on configured aggregations and not a general point of view like the MongoDB exporter.
+
+
 ```
 $ mongodb_query_exporter
 ```
@@ -25,7 +28,7 @@ $ mongodb_query_exporter
 Use the `-help` flag to get help information.
 
 ```
-Export different aggregations from MongoDB as prometheus comptatible metrics.
+Export different aggregations from MongoDB as prometheus compatible metrics.
 
 Usage:
   mongodb_query_exporter [flags]
@@ -59,7 +62,7 @@ mongodb:
   maxConnection: 3
   defaultCacheTime: 5
 metrics:
-- name: myapp_simplevalue_total
+- name: myapp_example_simplevalue_total
   type: gauge
   help: 'Simple gauge metric'
   value: total
@@ -73,9 +76,9 @@ metrics:
     [
       {"$count":"total"}
     ]  
-- name: myapp_processes_total
+- name: myapp_example_processes_total
   type: gauge
-  help: 'The total number of processes in the queuy labeled by their status'
+  help: 'The total number of processes in a job queue'
   value: total
   cacheTime: 5
   labels: [type,status]
@@ -109,3 +112,7 @@ metrics:
       }}
     ]
 ```
+
+### Real world example
+The balloon helm chart implements the mongodb-query-exporter to expose general stats from the MongoDB like the number of total nodes or files stored internally or externally.
+See the [config-map here](https://github.com/gyselroth/balloon-helm/blob/master/unstable/balloon/charts/balloon-mongodb-metrics/templates/config-map.yaml).

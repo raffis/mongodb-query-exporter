@@ -2,9 +2,8 @@ package collector
 
 import (
 	"io/ioutil"
+	"log"
 	"testing"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func init() {
@@ -230,6 +229,55 @@ func TestInitializeMetrics(t *testing.T) {
 
 			if err == nil {
 				t.Error("expected error, got none")
+				return
+			}
+
+			actual := err.Error()
+			if actual != test.error {
+				t.Errorf("expected '%s', but got '%s'", test.error, err.Error())
+			}
+		})
+	}
+}
+
+func TestEventstreamMetrics(t *testing.T) {
+	var tests = []metricTest{
+		metricTest{
+			name: "Successful eventstream with uninitialized metric (no aggregation result)",
+			metric: &Metric{
+				Name:       "simple_counter_realtime_update",
+				Type:       "counter",
+				Value:      "total",
+				Realtime:   true,
+				Database:   "foo",
+				Collection: "bar",
+				Labels:     []string{"foo"},
+				Pipeline:   "[{\"$match\":{\"foo\":\"bar\"}}]",
+			},
+			error: "1 error occurred:\n\t* failed to update metric simple_counter_realtime_update, failed with error metric simple_counter_realtime_update aggregation returned an emtpy result set\n\n",
+			docs: []interface{}{
+				ChangeStreamEvent{
+					NS: &ChangeStreamEventNamespace{"foo", "bar"},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			collector := &Collector{buildMock(test.docs), &Config{
+				Metrics: []*Metric{test.metric},
+			}}
+
+			err := collector.realtimeUpdate(test.metric)
+
+			if test.error == "" && err == nil {
+				return
+			}
+
+			if err == nil {
+				t.Error("expected error, got none")
+				return
 			}
 
 			actual := err.Error()

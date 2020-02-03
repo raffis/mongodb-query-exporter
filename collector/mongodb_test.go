@@ -10,7 +10,7 @@ import (
 )
 
 type mockMongoDBDriver struct {
-	ChangeStreamData *mongo.ChangeStream
+	ChangeStreamData *mockCursor
 	AggregateCursor  *mockCursor
 }
 
@@ -20,7 +20,12 @@ type mockCursor struct {
 }
 
 func (cursor *mockCursor) Decode(val interface{}) error {
-	*val.(*AggregationResult) = cursor.Current.(AggregationResult)
+	switch val.(type) {
+	case *AggregationResult:
+		*val.(*AggregationResult) = cursor.Current.(AggregationResult)
+	case *ChangeStreamEvent:
+		*val.(*ChangeStreamEvent) = cursor.Current.(ChangeStreamEvent)
+	}
 	return nil
 }
 
@@ -49,6 +54,6 @@ func (mdb *mockMongoDBDriver) Aggregate(ctx context.Context, db string, col stri
 	return mdb.AggregateCursor, nil
 }
 
-func (mdb *mockMongoDBDriver) Watch(ctx context.Context, db string, col string, pipeline mongo.Pipeline) (*mongo.ChangeStream, error) {
-	return mdb.ChangeStreamData, nil
+func (mdb *mockMongoDBDriver) Watch(ctx context.Context, db string, col string, pipeline mongo.Pipeline) (Cursor, error) {
+	return mdb.AggregateCursor, nil
 }
