@@ -13,7 +13,6 @@ require (
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/mock v1.4.0 // indirect
-	github.com/golang/protobuf v1.3.3 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-github/v25 v25.1.3 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
@@ -37,17 +36,18 @@ require (
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.2.1
+	go.opencensus.io v0.22.3 // indirect
 	golang.org/x/arch v0.0.0-20191126211547-368ea8f32fff // indirect
-	golang.org/x/crypto v0.0.0-20200128174031-69ecbb4d6d5d // indirect
+	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72 // indirect
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1 // indirect
 	golang.org/x/lint v0.0.0-20200130185559-910be7a94367 // indirect
 	golang.org/x/mobile v0.0.0-20200123024942-82c397c4c527 // indirect
 	golang.org/x/mod v0.2.0 // indirect
-	golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9 // indirect
+	golang.org/x/net v0.0.0-20200202094626-16171245cfb2 // indirect
+	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
-	golang.org/x/tools v0.0.0-20200131211209-ecb101ed6550 // indirect
-	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
-	google.golang.org/grpc v1.27.0 // indirect
+	golang.org/x/tools v0.0.0-20200204074204-1cc6d1ef6c74 // indirect
+	google.golang.org/genproto v0.0.0-20200203223152-ff9e8190c2f5 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 	rsc.io/sampler v1.99.99 // indirect
 )
