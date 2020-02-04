@@ -16,7 +16,7 @@ MongoDB aggregation query exporter for [Prometheus](https://prometheus.io).
 
 ## Usage
 
-Get Prometheus MongoDB aggregation query exporter, either as a [binary](https://github.com/raffis/mongodb-query-exporter/releases/latest) or packaged as a [Docker image](https://hub.docker.com/r/githubraffis/mongodb-query-exporter).
+Get Prometheus MongoDB aggregation query exporter, either as a [binary](https://github.com/raffis/mongodb-query-exporter/releases/latest) or packaged as a [Docker image](https://hub.docker.com/r/raffis/mongodb-query-exporter).
 
 Note that this is not a replacement form the MongoDB exporter. This app allows it to expose custom MongoDB metrics based on configured aggregations and not a general point of view like the MongoDB exporter.
 
