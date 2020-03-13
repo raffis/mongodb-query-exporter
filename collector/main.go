@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -26,6 +27,9 @@ type MongoDBConfig struct {
 	URI               string
 	MaxConnections    int32
 	ConnectionTimeout time.Duration
+	DefaultCacheTime  int64
+	DefaultDatabase   string
+	DefaultCollection string
 }
 
 // The collector holds the configureation and the mongodb driver
@@ -37,17 +41,9 @@ type Collector struct {
 // Global configuration which holds all monitored aggregations
 type Config struct {
 	MongoDBConfig MongoDBConfig `mapstructure:"mongodb"`
-	MetricOptions MetricOptions
 	Bind          string
 	LogLevel      string
 	Metrics       []*Metric
-}
-
-// Metric overall defaults
-type MetricOptions struct {
-	DefaultCacheTime  int64
-	DefaultDatabase   string
-	DefaultCollection string
 }
 
 // MongoDB aggregation metric
@@ -74,6 +70,8 @@ const (
 )
 
 func (collector *Collector) initializeMetrics() {
+	var wg sync.WaitGroup
+
 	if len(collector.Config.Metrics) == 0 {
 		log.Warning("no metrics have been configured")
 		return
@@ -81,7 +79,11 @@ func (collector *Collector) initializeMetrics() {
 
 	for _, metric := range collector.Config.Metrics {
 		log.Infof("initialize metric %s", metric.Name)
+		wg.Add(1)
+
 		go func(metric *Metric) {
+			defer wg.Done()
+
 			err := collector.initializeMetric(metric)
 
 			if err != nil {
@@ -89,6 +91,8 @@ func (collector *Collector) initializeMetrics() {
 			}
 		}(metric)
 	}
+
+	wg.Wait()
 }
 
 func (collector *Collector) initializeMetric(metric *Metric) error {
@@ -97,10 +101,12 @@ func (collector *Collector) initializeMetric(metric *Metric) error {
 	// Set cache time (pull interval)
 	if metric.CacheTime > 0 {
 		metric.sleep = time.Duration(metric.CacheTime) * time.Second
-	} else if collector.Config.MetricOptions.DefaultCacheTime > 0 {
-		metric.sleep = time.Duration(collector.Config.MetricOptions.DefaultCacheTime) * time.Second
+	} else if collector.Config.MongoDBConfig.DefaultCacheTime > 0 {
+		metric.sleep = time.Duration(collector.Config.MongoDBConfig.DefaultCacheTime) * time.Second
+		metric.CacheTime = collector.Config.MongoDBConfig.DefaultCacheTime
 	} else {
 		metric.sleep = 5 * time.Second
+		metric.CacheTime = 5
 	}
 
 	// Initialize prometheus metric

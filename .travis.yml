@@ -11,16 +11,16 @@ script:
 - make vet
 - make test
 - make build
-    
 - if [ "${TRAVIS_TAG:0:1}" == "v" ]; then version=${TRAVIS_TAG:1}; fi;
 - if [ "$TRAVIS_TAG" != "" ]; then make docker DOCKER_IMAGE_TAG=$version; fi
 after_script:
 - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci
 - ls -l
 deploy:
-  provider: releases
+- provider: releases
   api_key:
     secure: aNcS6KDzlSIjand71LzAk6+Ey/akTTTwDs0pEYHazwvZwjsAJUxig4LJcodK6TEEWRLVqBUkiLuKkgQpLkXv/Og0BYJpnco6mSSVL/ZoZN0GA2qix3JPJGJFicF5oewpbIM0UZiFpHYRrHkoTUyBawgcg744S30Q+7gT8et1kUH6JmV8AsPEP6vW9k4YT03950BVF9vWXdnPibpCyjVcrS8t6lJ3p8xujHc55lv6GXPFy/o2aln7vsTMj+rjfOlLJO5qH+4Cpe+TEbQZtgyPIAO5+JIxixH6aJCKK6C5Tk5xuaGHLDwrMGOZHLtMkP4f6kawqVU6+qiT+Q6cbwqcIjp/eTBZQVdduCWXqWJFOhW1GxGJUIASgOoOqfQzb/yAe/dgFM6o4LSD9xn1PnYx+UkDin7DrKqqu0KgfYHwu+dKYRPUuTxND8A1oWx5T5ZaeIo7yIQBfAyuov4HpHrnI+VAOzF1xfQUp2wvHhrtjTEcZPvCbHaRNPPe7v145CugcLWvzlwyPjHwsQzMxg8Su+cp5SHGYy79fpnzRyNK/AxeRhkhgc2sAQMymQUw+E5coO3gLT8j8BZ6yekEN1UlFpRQiEuIuJTSkeHgES9l22jVwVe1+vAEaRzc1bT7W8Q+WOjik+Bg07nVQL2UmVb+GH5HvHMJoThuO7pcPP5SUNU=
+  skip_cleanup: true
   file: 'mongodb_query_exporter'
   on:
     tags: true

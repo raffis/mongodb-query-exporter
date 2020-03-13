@@ -240,6 +240,38 @@ func TestInitializeMetrics(t *testing.T) {
 	}
 }
 
+func TestInitializeMetricStack(t *testing.T) {
+	t.Run("Initialize metric stack one of two but only one is valid", func(t *testing.T) {
+		var d []interface{}
+
+		collector := &Collector{buildMock(d), &Config{
+			Metrics: []*Metric{
+				&Metric{
+					Name:     "foobar",
+					Type:     "counter",
+					Value:    "total",
+					Labels:   []string{"foo"},
+					Pipeline: "[{\"$match\":{\"foo\":\"bar\"}}]",
+				},
+				&Metric{
+					Name: "not_exising",
+					Type: "notexising",
+				},
+			},
+		}}
+
+		collector.initializeMetrics()
+
+		if collector.Config.Metrics[0].metric == nil {
+			t.Errorf("expected initialized metric, but got nil")
+		}
+
+		if collector.Config.Metrics[1].metric != nil {
+			t.Errorf("expected uninitialized metric, but got an initialized metric")
+		}
+	})
+}
+
 func TestEventstreamMetrics(t *testing.T) {
 	var tests = []metricTest{
 		metricTest{

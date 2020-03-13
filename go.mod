@@ -11,7 +11,6 @@ require (
 	github.com/creack/pty v1.1.9 // indirect
 	github.com/envoyproxy/go-control-plane v0.9.2 // indirect
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
-	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/mock v1.4.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-github/v25 v25.1.3 // indirect
@@ -22,8 +21,6 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/kr/pty v1.1.8 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.4.0

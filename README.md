@@ -14,6 +14,10 @@ MongoDB aggregation query exporter for [Prometheus](https://prometheus.io).
 * Pull interval
 * Support for (soft) realtime metric updates (>= MongoDB 3.6)
 
+## Beta notice
+
+This software is currently beta and the API/configuration may break without notice until a stable version is released.
+
 ## Usage
 
 Get Prometheus MongoDB aggregation query exporter, either as a [binary](https://github.com/raffis/mongodb-query-exporter/releases/latest) or packaged as a [Docker image](https://hub.docker.com/r/raffis/mongodb-query-exporter).
@@ -60,7 +64,6 @@ mongodb:
   uri: mongodb://localhost:27017
   connectionTimeout: 10
   maxConnection: 3
-  defaultCacheTime: 5
 metrics:
 - name: myapp_example_simplevalue_total
   type: gauge
