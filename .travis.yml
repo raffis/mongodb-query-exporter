@@ -1,7 +1,11 @@
 language: go
-go: '1.12'
+go: '1.13'
 env:
 - GO111MODULE=on
+cache:
+  directories:
+  - $HOME/.cache/go-build
+  - $HOME/gopath/pkg/mod
 before_script:
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls

@@ -2,8 +2,9 @@ package collector
 
 import (
 	"io/ioutil"
-	"log"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func init() {
