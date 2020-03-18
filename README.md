@@ -62,19 +62,20 @@ bind: 0.0.0.0:9412
 logLevel: info
 mongodb:
   uri: mongodb://localhost:27017
-  connectionTimeout: 10
+  connectionTimeout: 3
   maxConnection: 3
+  defaultInterval: 5
 metrics:
 - name: myapp_example_simplevalue_total
   type: gauge
   help: 'Simple gauge metric'
   value: total
   labels: []
-  cacheTime: 10
+  mode: pull
+  interval: 10
   constLabels: []
   database: mydb
   collection: objects  
-  realtime: false
   pipeline: |
     [
       {"$count":"total"}
@@ -83,12 +84,11 @@ metrics:
   type: gauge
   help: 'The total number of processes in a job queue'
   value: total
-  cacheTime: 5
+  mode: push
   labels: [type,status]
   constLabels: []
   database: mydb
   collection: queue
-  realtime: true
   pipeline: |
     [
       {"$group": {

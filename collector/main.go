@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -27,7 +26,7 @@ type MongoDBConfig struct {
 	URI               string
 	MaxConnections    int32
 	ConnectionTimeout time.Duration
-	DefaultCacheTime  int64
+	DefaultInterval   int64
 	DefaultDatabase   string
 	DefaultCollection string
 }
@@ -52,9 +51,9 @@ type Metric struct {
 	Type        string
 	Help        string
 	Value       string
-	CacheTime   int64
+	Interval    int64
 	ConstLabels prometheus.Labels
-	Realtime    bool
+	Mode        string
 	Labels      []string
 	Database    string
 	Collection  string
@@ -69,44 +68,16 @@ const (
 	typeCounter = "counter"
 )
 
-func (collector *Collector) initializeMetrics() {
-	var wg sync.WaitGroup
-
-	if len(collector.Config.Metrics) == 0 {
-		log.Warning("no metrics have been configured")
-		return
-	}
-
-	for _, metric := range collector.Config.Metrics {
-		log.Infof("initialize metric %s", metric.Name)
-		wg.Add(1)
-
-		go func(metric *Metric) {
-			defer wg.Done()
-
-			err := collector.initializeMetric(metric)
-
-			if err != nil {
-				log.Errorf("failed to initialize metric %s with error %s", metric.Name, err)
-			}
-		}(metric)
-	}
-
-	wg.Wait()
-}
-
 func (collector *Collector) initializeMetric(metric *Metric) error {
-	log.Infof("initialize metric %s", metric.Name)
-
 	// Set cache time (pull interval)
-	if metric.CacheTime > 0 {
-		metric.sleep = time.Duration(metric.CacheTime) * time.Second
-	} else if collector.Config.MongoDBConfig.DefaultCacheTime > 0 {
-		metric.sleep = time.Duration(collector.Config.MongoDBConfig.DefaultCacheTime) * time.Second
-		metric.CacheTime = collector.Config.MongoDBConfig.DefaultCacheTime
+	if metric.Interval > 0 {
+		metric.sleep = time.Duration(metric.Interval) * time.Second
+	} else if collector.Config.MongoDBConfig.DefaultInterval > 0 {
+		metric.sleep = time.Duration(collector.Config.MongoDBConfig.DefaultInterval) * time.Second
+		metric.Interval = collector.Config.MongoDBConfig.DefaultInterval
 	} else {
 		metric.sleep = 5 * time.Second
-		metric.CacheTime = 5
+		metric.Interval = 5
 	}
 
 	// Initialize prometheus metric
@@ -121,7 +92,7 @@ func (collector *Collector) initializeMetric(metric *Metric) error {
 		return fmt.Errorf("failed to initialize metric %s with error %s", metric.Name, err)
 	}
 
-	return collector.updateMetric(metric)
+	return nil
 }
 
 func (metric *Metric) getOptions() interface{} {
@@ -330,69 +301,66 @@ func (metric *Metric) getLabels(result AggregationResult) (prometheus.Labels, er
 	return labels, nil
 }
 
-func (collector *Collector) startPushListeners() error {
-	var cursors = make(map[string][]string)
+var cursors = make(map[string][]string)
 
-METRICS:
-	for _, metric := range collector.Config.Metrics {
-		if metric.Realtime == false {
-			continue
-		}
-
-		//start only one changestream per database/collection
-		if val, ok := cursors[metric.Database]; ok {
-			for _, coll := range val {
-				if coll == metric.Collection {
-					continue METRICS
-				}
+func (collector *Collector) PushHandler(metric *Metric) {
+	//start only one changestream per database/collection
+	if val, ok := cursors[metric.Database]; ok {
+		for _, coll := range val {
+			if coll == metric.Collection {
+				return
 			}
-
-			cursors[metric.Database] = append(cursors[metric.Database], metric.Collection)
-		} else {
-			cursors[metric.Database] = []string{metric.Collection}
 		}
 
-		//start changestream for each database/collection
+		cursors[metric.Database] = append(cursors[metric.Database], metric.Collection)
+	} else {
+		cursors[metric.Database] = []string{metric.Collection}
+	}
+
+	err := collector.pushUpdate(metric)
+	if err != nil {
+		log.Errorf("failed to handle realtime updates for %s, error %s", metric.Name, err)
+	}
+}
+
+// Run metric collector for each metric either in push or pull mode
+func (collector *Collector) Run() {
+	for _, metric := range collector.Config.Metrics {
 		go func(metric *Metric) {
-			err := collector.realtimeUpdate(metric)
+			log.Infof("initialize metric %s", metric.Name)
+
+			err := collector.initializeMetric(metric)
 
 			if err != nil {
-				log.Errorf("failed to handle realtime updates for %s, error %s", metric.Name, err)
+				log.Errorf("failed to initialize metric %s with error %s", metric.Name, err)
+				return
 			}
-		}(metric)
-	}
 
-	return nil
-}
-
-func (collector *Collector) startPullListeners() {
-	for _, metric := range collector.Config.Metrics {
-		//If the metric is realtime we start a mongodb changestream and wait for changes instead pull (interval)
-		if metric.Realtime == true {
-			continue
-		}
-
-		//do not start listeneres for uninitialized metrics due errors
-		if metric.metric == nil {
-			continue
-		}
-
-		go func(metric *Metric) {
-			for {
-				err := collector.updateMetric(metric)
-
-				if err != nil {
-					log.Errorf("failed to handle metric %s, awaiting the next pull. failed with error %s", err, metric.Name)
-				}
-
-				log.Debugf("wait %ds to refresh metric %s", metric.CacheTime, metric.Name)
-				time.Sleep(metric.sleep)
+			//If the metric is realtime we start a mongodb changestream and wait for changes instead pull (interval)
+			if metric.Mode == "" || metric.Mode == "pull" {
+				collector.PullHandler(metric)
+			} else if metric.Mode == "push" {
+				collector.PushHandler(metric)
 			}
 		}(metric)
 	}
 }
 
-func (collector *Collector) realtimeUpdate(metric *Metric) error {
+//Execute aggregations and update metrics in intervals
+func (collector *Collector) PullHandler(metric *Metric) {
+	for {
+		err := collector.updateMetric(metric)
+
+		if err != nil {
+			log.Errorf("failed to handle metric %s, awaiting the next pull. failed with error %s", err, metric.Name)
+		}
+
+		log.Infof("wait %ds to refresh metric %s", metric.Interval, metric.Name)
+		time.Sleep(metric.sleep)
+	}
+}
+
+func (collector *Collector) pushUpdate(metric *Metric) error {
 	log.Infof("start changestream on %s.%s, waiting for changes", metric.Database, metric.Collection)
 	cursor, err := collector.Driver.Watch(ctx, metric.Database, metric.Collection, mongo.Pipeline{})
 
@@ -416,7 +384,7 @@ func (collector *Collector) realtimeUpdate(metric *Metric) error {
 		var errors *multierror.Error
 
 		for _, metric := range collector.Config.Metrics {
-			if metric.Realtime == true && metric.Database == result.NS.DB && metric.Collection == result.NS.Coll {
+			if metric.Mode == "push" && metric.Database == result.NS.DB && metric.Collection == result.NS.Coll && metric.metric != nil {
 				err := collector.updateMetric(metric)
 
 				if err != nil {
@@ -430,13 +398,6 @@ func (collector *Collector) realtimeUpdate(metric *Metric) error {
 	}
 
 	return nil
-}
-
-// Initialize metrics and start listeners
-func (collector *Collector) Run() {
-	collector.initializeMetrics()
-	collector.startPullListeners()
-	collector.startPushListeners()
 }
 
 // Run executes a blocking http server. Starts the http listener with the /metrics endpoint
