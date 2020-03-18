@@ -178,7 +178,10 @@ func (collector *Collector) updateMetric(metric *Metric) error {
 		return errors.Wrap(err, "failed to decode json aggregation pipeline")
 	}
 
-	cursor, err := collector.Driver.Aggregate(context.Background(), metric.Database, metric.Collection, pipeline)
+	ctx, cancel := context.WithTimeout(context.Background(), collector.Config.MongoDBConfig.ConnectionTimeout*time.Second)
+	defer cancel()
+
+	cursor, err := collector.Driver.Aggregate(ctx, metric.Database, metric.Collection, pipeline)
 
 	if err != nil {
 		return err
@@ -187,7 +190,7 @@ func (collector *Collector) updateMetric(metric *Metric) error {
 	var multierr *multierror.Error
 	var i int
 
-	for cursor.Next(context.TODO()) {
+	for cursor.Next(ctx) {
 		i++
 		var result AggregationResult
 
@@ -379,8 +382,7 @@ func (collector *Collector) startPullListeners() {
 				err := collector.updateMetric(metric)
 
 				if err != nil {
-					log.Errorf("failed to handle metric %s, abort listen on metric %s", err, metric.Name)
-					return
+					log.Errorf("failed to handle metric %s, awaiting the next pull. failed with error %s", err, metric.Name)
 				}
 
 				log.Debugf("wait %ds to refresh metric %s", metric.CacheTime, metric.Name)
@@ -459,16 +461,7 @@ func RunAndBind(config *Config) {
 		panic(err)
 	}
 
-	// Check the connection, terminate if MongoDB is not reachable
-	log.Debugf("ping mongodb and enforce connection")
-	err = collector.Driver.Ping(ctx, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	log.Debugf("mongodb up an reachable, start listeners")
 	collector.Run()
-
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { http.Error(w, "OK", http.StatusOK) })
 	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		log.Debugf("handle incoming http request /metrics")
