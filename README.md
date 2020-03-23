@@ -53,9 +53,12 @@ Alternatively you might also deploy it as a normal service and fetch aggregation
 If the provided MongoDB URI is not reachable by the exporter /metrics will report a HTTP code 500 Internal Server Error,
 causing Prometheus to record `up=0` for that scrape.
 
+The exporter is looking for a configuration in ~/config.yaml or if set the path from the env `MDBEXPORTER_CONFIG`.
+Note running with the docker container the exporter is looking by default in `/etc/mongodb-query-exporter/config.yaml`.
+
 
 Example:
-**`./config.yml`**
+**`config.yml`**
 
 ```yaml
 bind: 0.0.0.0:9412

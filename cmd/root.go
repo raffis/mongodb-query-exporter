@@ -75,7 +75,8 @@ func initConfig() {
 		// Find home directory.
 		usr, err := user.Current()
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
+			return
 		}
 
 		// Search config in home directory with name ".mongodb_query_exporter" (without extension).

@@ -8,5 +8,8 @@ RUN make
 FROM        quay.io/prometheus/busybox:glibc
 COPY        --from=builder /go/src/github.com/raffis/mongodb-query-exporter/mongodb_query_exporter /bin/mongodb_query_exporter
 
+ENV MDBEXPORTER_CONFIG /etc/mongodb-query-exporter/config.yaml 
+USER 1000:1000
+
 EXPOSE      9412
 ENTRYPOINT [ "/bin/mongodb_query_exporter" ]
