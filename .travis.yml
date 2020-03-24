@@ -10,7 +10,7 @@ before_script:
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
 script:
-- versio=master
+- version=master
 - if [ "${TRAVIS_TAG:0:1}" == "v" ]; then version=${TRAVIS_TAG:1}; fi;
 - make docker DOCKER_IMAGE_TAG=$version
 after_script:
