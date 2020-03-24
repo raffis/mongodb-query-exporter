@@ -11,5 +11,6 @@ COPY        --from=builder /go/src/github.com/raffis/mongodb-query-exporter/mong
 ENV MDBEXPORTER_CONFIG /etc/mongodb-query-exporter/config.yaml 
 USER 1000:1000
 
+LABEL maintainer="public@raffaelsahli.com"
 EXPOSE      9412
 ENTRYPOINT [ "/bin/mongodb_query_exporter" ]

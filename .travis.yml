@@ -10,13 +10,9 @@ before_script:
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
 script:
-- make deps
-- make style
-- make vet
-- make test
-- make build
+- versio=master
 - if [ "${TRAVIS_TAG:0:1}" == "v" ]; then version=${TRAVIS_TAG:1}; fi;
-- if [ "$TRAVIS_TAG" != "" ]; then make docker DOCKER_IMAGE_TAG=$version; fi
+- make docker DOCKER_IMAGE_TAG=$version
 after_script:
 - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci
 - ls -l

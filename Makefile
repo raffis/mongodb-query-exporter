@@ -22,7 +22,7 @@ DOCKER_IMAGE_NAME   ?= raffis/mongodb-query-exporter
 DOCKER_IMAGE_TAG    ?= latest
 
 
-all: deps format build test
+all: deps vet format build test
 
 style:
 	@echo ">> checking code style"
