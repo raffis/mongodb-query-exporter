@@ -1,7 +1,7 @@
 # Prometheus MongoDB query exporter
-[![Build Status](https://travis-ci.org/raffis/mongodb-query-exporter.svg?branch=master)](https://travis-ci.org/raffis/mongodb-query-exporter)
+![.github/workflows/action.yml](https://github.com/raffis/mongodb-query-exporter/workflows/.github/workflows/action.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/raffis/mongodb-query-exporter)](https://goreportcard.com/report/github.com/raffis/mongodb-query-exporter)
-[![GoDoc](https://godoc.org/github.com/raffis/mongodb_query_exporter?status.svg)](https://godoc.org/github.com/raffis/mongodb-query-exporter)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/raffis/mongodb-query-exporter?tab=subdirectories)](https://pkg.go.dev/github.com/raffis/mongodb-query-exporter?tab=subdirectories)
 [![Coverage Status](https://coveralls.io/repos/github/raffis/mongodb-query-exporter/badge.svg?branch=master)](https://coveralls.io/github/raffis/mongodb-query-exporter?branch=master)
 [![Docker Pulls](https://img.shields.io/docker/pulls/raffis/mongodb-query-exporter.svg?maxAge=604800)](https://hub.docker.com/r/raffis/mongodb-query-exporter)
 
