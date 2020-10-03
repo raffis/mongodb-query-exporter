@@ -74,7 +74,6 @@ The exporter is looking for a configuration in `~/config.yaml` and `/etc/mongodb
 
 You may also use env variables to configure the exporter:
 
-|--------------------------|------------------------------------------|
 | Env variable             | Description                              |
 |--------------------------|------------------------------------------|
 | MDBEXPORTER_CONFIG       | Custom path for the configuration        |
