@@ -1,44 +1,77 @@
 package cmd
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 	"os/user"
 
-	"github.com/raffis/mongodb-query-exporter/collector"
-
+	"github.com/raffis/mongodb-query-exporter/config"
+	v1 "github.com/raffis/mongodb-query-exporter/config/v1"
+	v2 "github.com/raffis/mongodb-query-exporter/config/v2"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var (
-	configPath string
-	logLevel   string
-	bind       string
-	uri        string
-	timeout    int
-	rootCmd    = &cobra.Command{
+	configPath   string
+	logLevel     string
+	logEncoding  string
+	bind         string
+	uri          string
+	queryTimeout int
+	rootCmd      = &cobra.Command{
 		Use:   "mongodb_query_exporter",
 		Short: "MongoDB aggregation exporter for prometheus",
-		Long:  `Export different aggregations from MongoDB as prometheus comptatible metrics.`,
+		Long:  `Export aggregations from MongoDB as prometheus metrics.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			var config collector.Config
-
-			err := viper.Unmarshal(&config)
+			var configVersion float32
+			err := viper.UnmarshalKey("version", &configVersion)
 			if err != nil {
 				panic(err)
 			}
 
-			level, err := log.ParseLevel(config.LogLevel)
+			var conf config.Config
+			switch configVersion {
+			case 2.0:
+				conf = &v2.Config{}
+			default:
+				conf = &v1.Config{}
+			}
+
+			err = viper.Unmarshal(&conf)
 			if err != nil {
 				panic(err)
 			}
 
-			log.SetLevel(level)
-			collector.RunAndBind(&config)
+			_, err = conf.Build()
+			if err != nil {
+				panic(err)
+			}
+
+			serve(conf.GetBindAddr())
 		},
 	}
 )
+
+// Run executes a blocking http server. Starts the http listener with the /metrics endpoint
+// and parses all configured metrics passed by config
+func serve(addr string) {
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { http.Error(w, "OK", http.StatusOK) })
+	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		promhttp.Handler().ServeHTTP(w, r)
+	})
+
+	err := http.ListenAndServe(addr, nil)
+
+	// If the port is already in use or another fatal error panic
+	if err != nil {
+		panic(err)
+	}
+}
 
 // Executes the root command.
 func Execute() error {
@@ -48,17 +81,20 @@ func Execute() error {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "Define a log level (default is info)")
-	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", ":9412", "config file (default is :9412)")
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "Define the log level (default is info) [debug,info,warning,error]")
+	rootCmd.PersistentFlags().StringVarP(&logEncoding, "log-encoding", "e", "json", "Define the log format (default is json) [json,console]")
+	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", ":9412", "Address to bind http server (default is :9412)")
 	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", "mongodb://localhost:27017", "MongoDB URI (default is mongodb://localhost:27017)")
-	rootCmd.PersistentFlags().IntVarP(&timeout, "timeout", "t", 3, "MongoDB connection timeout (default is 3 seconds")
-	viper.BindPFlag("logLevel", rootCmd.PersistentFlags().Lookup("log-level"))
+	rootCmd.PersistentFlags().IntVarP(&queryTimeout, "query-timeout", "t", 10, "Timeout for MongoDB queries")
+	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
+	viper.BindPFlag("log.encoding", rootCmd.PersistentFlags().Lookup("log-encoding"))
 	viper.BindPFlag("bind", rootCmd.PersistentFlags().Lookup("bind"))
 	viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
-	viper.BindPFlag("mongodb.connectionTimeout", rootCmd.PersistentFlags().Lookup("timeout"))
+	viper.BindPFlag("mongodb.queryTimeout", rootCmd.PersistentFlags().Lookup("query-timeout"))
 	viper.BindEnv("mongodb.uri", "MDBEXPORTER_MONGODB_URI")
-	viper.BindEnv("logLevel", "MDBEXPORTER_LOG_LEVEL")
-	viper.BindEnv("mongodb.connection_timeout", "MDBEXPORTER_MONGODB_CONNECTION_TIMEOUT")
+	viper.BindEnv("mongodb.queryTimeout", "MDBEXPORTER_MONGODB_QUERY_TIMEOUT")
+	viper.BindEnv("log.level", "MDBEXPORTER_LOG_LEVEL")
+	viper.BindEnv("log.encoding", "MDBEXPORTER_LOG_ENCODING")
 	viper.BindEnv("bind", "MDBEXPORTER_BIND")
 }
 
@@ -79,14 +115,15 @@ func initConfig() {
 			return
 		}
 
+		// System wide config
+		viper.AddConfigPath("/etc/mongodb_query_exporter")
 		// Search config in home directory with name ".mongodb_query_exporter" (without extension).
 		viper.AddConfigPath(usr.HomeDir + "/.mongodb_query_exporter")
+		//config file name without extension
 		viper.SetConfigName("config")
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Errorf("failed to open config file %s", err)
-	} else {
-		log.Infof("using config file %s", viper.ConfigFileUsed())
+		fmt.Printf("failed to open config file %s\n", err)
 	}
 }

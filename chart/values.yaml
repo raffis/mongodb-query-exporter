@@ -1,0 +1,129 @@
+affinity: {}
+
+annotations: {}
+
+extraArgs:
+  
+fullnameOverride: ""
+
+image:
+  pullPolicy: IfNotPresent
+  repository: raffis/mongodb-query-exporter
+  tag: 1.0.0-beta5
+
+imagePullSecrets: []
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: metrics
+  initialDelaySeconds: 10
+
+
+#List of MongoDB servers (Injected as secret env)
+mongodb:
+#- [mongodb[+srv]://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
+
+#The MongoDB query exporter config (required if exstingConfig.name is not set)
+config: |
+#  version: 2.0
+#  log:
+#    encoding: json
+#    level: info
+#  collectors:
+#  - mongodb:
+#      queryTimeout: 10
+#      maxConnection: 3
+#      defaultInterval: 5
+#    metrics:
+#    - name: myapp_example_simplevalue_total
+#      type: gauge
+#      help: 'Simple gauge metric'
+#      value: total
+#      labels: []
+#      mode: pull
+#      interval: 10
+#      constLabels: []
+#      database: mydb
+#      collection: objects
+#      pipeline: |
+#        [
+#          {"$count":"total"}
+#        ]     
+
+# Name of an externally managed configmap (in the same namespace) containing the mongodb-query-exporter yaml config
+# If this is provided, the value config is ignored. Note the config needs a key named `config.yaml` which contains the query exporters config.
+existingConfig:
+  name: ""
+
+# Name of an externally managed secret (in the same namespace) containing as list of MongoDB envs (connectin URI)
+# If this is provided, the value mongodb is ignored.
+existingSecret:
+  name: ""
+
+nameOverride: ""
+
+nodeSelector: {}
+
+#Add additional containers (sidecars)
+extraContainers:
+
+podAnnotations: {}
+#  prometheus.io/scrape: "true"
+#  prometheus.io/port: "metrics"
+
+port: "9412"
+
+priorityClassName: ""
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: metrics
+  initialDelaySeconds: 10
+
+replicas: 1
+
+resources: {}
+# limits:
+#   cpu: 250m
+#   memory: 192Mi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
+
+# Extra environment variables that will be passed into the exporter pod
+env: {}
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["all"]
+  readOnlyRootFilesystem: true
+  runAsGroup: 10000
+  runAsNonRoot: true
+  runAsUser: 10000
+
+service:
+  labels: {}
+  annotations: {}
+  port: 9412
+  type: ClusterIP
+
+serviceAccount:
+  create: true
+  # If create is true and name is not set, then a name is generated using the
+  # fullname template.
+  name:
+
+# Prometheus operator ServiceMonitor
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+  namespace:
+  additionalLabels: {}
+  targetLabels: []
+  metricRelabelings: []
+
+tolerations: []
