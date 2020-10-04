@@ -1,4 +1,4 @@
-apiVersion: v3
+apiVersion: v2
 appVersion: 1.0.0-beta5
 description: A Prometheus exporter for MongoDB custom query/aggregations
 home: https://github.com/raffis/mongodb-query-exporter
