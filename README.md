@@ -13,8 +13,9 @@ MongoDB aggregation query exporter for [Prometheus](https://prometheus.io).
 * Multiple metrics for different db/collections
 * Pull and Push (Push is only supported for MongoDB >= 3.6)
 * Supports multiple MongoDB servers
+* Public API for Golang
 
-Note that this is not designed to be a replacement for the MongoDB exporter to instrument MongoDB internals. This application exports custom MongoDB metrics in the prometheus format based on the queries (aggregations) you want.
+Note that this is not designed to be a replacement for the [MongoDB exporter](https://github.com/percona/mongodb_exporter) to instrument MongoDB internals. This application exports custom MongoDB metrics in the prometheus format based on the queries (aggregations) you want.
 
 ## Beta notice
 
@@ -85,8 +86,8 @@ You may also use env variables to configure the exporter:
 
 Note if you have multiple collectors you can inject an env variable for the MongoDB connection URI like:
 
-1. MDBEXPORTER_COLLECTOR_0_MONGODB_URI=mongodb://srv1:27017
-2. MDBEXPORTER_COLLECTOR_1_MONGODB_URI=mongodb://srv2:27017
+1. `MDBEXPORTER_COLLECTOR_0_MONGODB_URI=mongodb://srv1:27017`
+2. `MDBEXPORTER_COLLECTOR_1_MONGODB_URI=mongodb://srv2:27017`
 3. ...
 
 ### Format v2.0
@@ -105,7 +106,7 @@ log:
 collectors:
 - mongodb:
     uri: mongodb://localhost:27017
-    connectionTimeout: 3
+    queryTimeout: 10
     maxConnection: 3
     defaultInterval: 5
   metrics:
@@ -228,7 +229,11 @@ metrics:
     ]
 ```
 
-### Used by
+## Go API
+Instead using the mongodb-query-exporter you may use the API to integrate the exporter within your go project.
+Please check out the [go package reference](https://pkg.go.dev/badge/github.com/raffis/mongodb-query-exporter?tab=subdirectories).
+
+## Used by
 * The balloon helm chart implements the mongodb-query-exporter to expose general stats from the MongoDB like the number of total nodes or files stored internally or externally.
 See the [config-map here](https://github.com/gyselroth/balloon-helm/blob/master/unstable/balloon/charts/balloon-mongodb-metrics/templates/config-map.yaml).
 

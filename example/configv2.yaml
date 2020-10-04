@@ -8,6 +8,7 @@ log:
 collectors:
 - mongodb:
     uri: mongodb://localhost:27017
+    queryTimeout: 10
     maxConnection: 3
     defaultInterval: 5
   metrics:
