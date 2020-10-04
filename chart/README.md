@@ -1,16 +1,13 @@
 # Prometheus MongoDB Exporter
 
-DEPRECATED and moved to <https://github.com/prometheus-community/helm-charts>
-
-Installs the [MongoDB Exporter](https://github.com/percona/mongodb_exporter) for [Prometheus](https://prometheus.io/). The
-MongoDB Exporter collects and exports oplog, replica set, server status, sharding and storage engine metrics.
+Installs the [MongoDB Query Exporter](https://github.com/raffis/mongodb-query-exporter) for [Prometheus](https://prometheus.io/).
 
 ## Installing the Chart
 
 To install the chart with the release name `my-release`:
 
 ```console
-$ helm upgrade --install my-release stable/prometheus-mongodb-exporter
+$ helm upgrade --install my-release mongodb-query-exporter/prometheus-mongodb-exporter
 ```
 
 This command deploys the MongoDB Exporter with the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
