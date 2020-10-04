@@ -92,6 +92,8 @@ Note if you have multiple collectors you can inject an env variable for the Mong
 
 ### Format v2.0
 
+The config format v2.0 is not supported in any version before `v1.0.0-beta5`. Please use v1.0 or upgrade to the latest version otherwise.
+
 Example:
 **`config.yml`**
 

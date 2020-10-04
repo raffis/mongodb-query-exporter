@@ -14,9 +14,10 @@ This command deploys the MongoDB Exporter with the default configuration. The [c
 
 ## Using the Chart
 
-To use the chart, ensure the `mongodb.uri` is populated with a valid [MongoDB URI](https://docs.mongodb.com/manual/reference/connection-string)
-or an existing secret (in the releases namespace) containing the key defined on `existingSecret.key`, with the URI is referred via `existingSecret.name`. If no secret key is defined, the default value is `mongodb-uri`.
-If the MongoDB server requires authentication, credentials should be populated in the connection string as well. The MongoDB Exporter supports
+To use the chart, please add your MongoDB server to the list of servers you want to query `mongodb` and ensure it is populated with a valid [MongoDB URI](https://docs.mongodb.com/manual/reference/connection-string).
+You may add multiple ones if you want to query more than one MongoDB server.
+Or an existing secret (in the releases namespace) with MongoDB URI's referred via `existingSecret.name`.
+If the MongoDB server requires authentication, credentials should be populated in the connection string as well. The MongoDB query exporter supports
 connecting to either a MongoDB replica set member, shard, or standalone instance.
 
 The chart comes with a ServiceMonitor for use with the [Prometheus Operator](https://github.com/helm/charts/tree/master/stable/prometheus-operator).
@@ -35,15 +36,16 @@ podAnnotations:
 |-----------|-------------|---------|
 | `affinity` | Node/pod affinities | `{}` |
 | `annotations` | Annotations to be added to the pods | `{}` |
-| `existingSecret.name` | Refer to an existing secret name instead of using `mongodb.uri` | `` |
-| `existingSecret.key` | Refer to an existing secret key | `mongodb-uri` |
+| `config` | The configuration for the mongodb-query-exporter. See README.md or the examples directory for examples. | `` |
+| `existingConfig.name` | Refer to an existing configmap name instead of using `config` | `` |
+| `existingSecret.name` | Refer to an existing secret name instead of using a list `mongodb` | `` |
 | `extraArgs` | The extra command line arguments to pass to the MongoDB Exporter  | See values.yaml |
 | `fullnameOverride` | Override the full chart name | `` |
 | `image.pullPolicy` | MongoDB Exporter image pull policy | `IfNotPresent` |
-| `image.repository` | MongoDB Exporter image name | `ssheehy/mongodb-exporter` |
-| `image.tag` | MongoDB Exporter image tag | `0.10.0` |
+| `image.repository` | MongoDB Exporter image name | `raffis/mongodb-query-exporter` |
+| `image.tag` | MongoDB query Exporter image tag | `v1.0.0-beta5` |
 | `imagePullSecrets` | List of container registry secrets | `[]` |
-| `mongodb.uri` | The [URI](https://docs.mongodb.com/manual/reference/connection-string) to connect to MongoDB | `` |
+| `mongodb` | A list of [URI](https://docs.mongodb.com/manual/reference/connection-string) to connect to MongoDB. These will be used as connection URI in the query exporter config. You don't need to reference the MongoDB server in the config. | `[]` |
 | `nameOverride` | Override the application name  | `` |
 | `nodeSelector` | Node labels for pod assignment | `{}` |
 | `podAnnotations` | Annotations to be added to all pods | `{}` |
