@@ -12,6 +12,7 @@
 * go 1.15 update
 
 ## Packaging
+* Provide Helm chart
 * Migrated to github actions (from travis-ci)
 
 
