@@ -88,7 +88,6 @@ jobs:
           exec: helm lint chart/
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.0.0
-        if: startsWith(github.ref, 'refs/tags/v')
         with:
           charts_dir: ./chart
         env:
