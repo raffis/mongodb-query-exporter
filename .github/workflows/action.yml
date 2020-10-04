@@ -15,8 +15,8 @@ jobs:
         run: echo ::set-output name=VERSION::${GITHUB_REF##*/}
       - name: Unit tests & coverage
         run: |
-          make test
-      - name: Full build
+          make test build
+      - name: Full build & docker image
         run: make docker DOCKER_IMAGE_TAG=${{ steps.get_version.outputs.VERSION }}
       - uses: shogo82148/actions-goveralls@v1
         with:
@@ -30,7 +30,7 @@ jobs:
         with:
           tag_name: ${{ steps.get_version.outputs.VERSION }}
           release_name: ${{ steps.get_version.outputs.VERSION }}
-          draft: false
+          draft: true
           prerelease: true
       - name: Create Release
         id: create_release
@@ -41,7 +41,7 @@ jobs:
         with:
           tag_name: ${{ steps.get_version.outputs.VERSION }}
           release_name: ${{ steps.get_version.outputs.VERSION }}
-          draft: false
+          draft: true
           prerelease: false
       - name: Upload beta Release Asset
         id: upload-beta-release-asset
