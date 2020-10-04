@@ -86,9 +86,3 @@ jobs:
         uses: WyriHaximus/github-action-helm3@v2
         with:
           exec: helm lint chart/
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.0.0
-        with:
-          charts_dir: ./chart
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
