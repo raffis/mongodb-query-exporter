@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/raffis/mongodb-query-exporter/collector"
@@ -14,7 +15,7 @@ import (
 
 // Configuration v1.0 format
 type Config struct {
-	MongoDB  *MongoDB
+	MongoDB  MongoDB
 	Bind     string
 	LogLevel string
 	Metrics  []*collector.Metric
@@ -30,16 +31,6 @@ type MongoDB struct {
 	DefaultCollection string
 }
 
-// Holds collectors
-type Exporter struct {
-	collectors []config.Collector
-}
-
-// Return list of collectors
-func (exporter *Exporter) Collectors() []config.Collector {
-	return exporter.collectors
-}
-
 // Get address where the http server should be bound to
 func (conf *Config) GetBindAddr() string {
 	return conf.Bind
@@ -47,8 +38,7 @@ func (conf *Config) GetBindAddr() string {
 
 // Build a collector from a configuration v1.0 format and return an Exprter with that collector.
 // Note the v1.0 config does not support multiple collectors, you may instead use the v2.0 format.
-func (conf *Config) Build() (config.Exporter, error) {
-	e := &Exporter{}
+func (conf *Config) Build() (*collector.Collector, error) {
 	l, err := zap.New(zap.Config{
 		Encoding: "console",
 		Level:    conf.LogLevel,
@@ -88,21 +78,27 @@ func (conf *Config) Build() (config.Exporter, error) {
 	c := collector.New(
 		collector.WithConfig(&collector.Config{
 			QueryTimeout:      conf.MongoDB.ConnectionTimeout,
-			DefaultInterval:   conf.MongoDB.DefaultInterval,
+			DefaultCache:      conf.MongoDB.DefaultInterval,
 			DefaultDatabase:   conf.MongoDB.DefaultDatabase,
 			DefaultCollection: conf.MongoDB.DefaultCollection,
 		}),
 		collector.WithLogger(l.Sugar()),
-		collector.WithDriver(d),
+		collector.WithCounter(config.Counter),
 	)
 
-	e.collectors = append(e.collectors, c)
-
-	for _, metric := range conf.Metrics {
-		go func(metric *collector.Metric) {
-			c.WithMetric(metric)
-		}(metric)
+	name := strings.Join(opts.Hosts, ",")
+	err = c.RegisterServer(name, d)
+	if err != nil {
+		return c, err
 	}
 
-	return e, nil
+	for _, metric := range conf.Metrics {
+		metric.Servers = []string{name}
+		err := c.RegisterMetric(metric)
+		if err != nil {
+			return c, err
+		}
+	}
+
+	return c, nil
 }

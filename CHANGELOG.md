@@ -4,11 +4,15 @@
 
 ## Features
 * Support for multiple MongoDB servers
-* Support to configure custom tls certificate
 * Support for versioned configurations
-* GO public API
+* Redesigned GO public API
+* New log implementation, the default is now json log format
+* Added new counter metric for internal stats about quries `mongodb_query_exporter_query_total`
 
 ## Changes
+* Dropped interval pulling mechanism, pull is now synchronous while getting called by an http request
+* Drop support for counters (use gauge instead)
+* No internal tracking of upstreams anymore, using prometheus ConstMetric
 * go 1.15 update
 
 ## Packaging

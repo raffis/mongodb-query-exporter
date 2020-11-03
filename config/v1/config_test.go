@@ -9,7 +9,7 @@ func TestBuild(t *testing.T) {
 	t.Run("Build collector", func(t *testing.T) {
 		var conf = &Config{
 			LogLevel: "error",
-			MongoDB:  &MongoDB{},
+			MongoDB:  MongoDB{},
 		}
 		_, err := conf.Build()
 
@@ -22,7 +22,7 @@ func TestBuild(t *testing.T) {
 		var conf = &Config{
 			LogLevel: "error",
 			Bind:     ":2222",
-			MongoDB:  &MongoDB{},
+			MongoDB:  MongoDB{},
 		}
 
 		_, err := conf.Build()
@@ -40,7 +40,7 @@ func TestBuild(t *testing.T) {
 		var conf = &Config{
 			LogLevel: "error",
 			Bind:     ":2222",
-			MongoDB: &MongoDB{
+			MongoDB: MongoDB{
 				URI: "mongodb://foo:27017",
 			},
 		}

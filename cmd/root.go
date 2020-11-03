@@ -1,17 +1,17 @@
 package cmd
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"os/user"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/raffis/mongodb-query-exporter/config"
 	v1 "github.com/raffis/mongodb-query-exporter/config/v1"
 	v2 "github.com/raffis/mongodb-query-exporter/config/v2"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -47,11 +47,15 @@ var (
 				panic(err)
 			}
 
-			_, err = conf.Build()
+			c, err := conf.Build()
 			if err != nil {
 				panic(err)
 			}
 
+			prometheus.MustRegister(config.Counter)
+			prometheus.MustRegister(c)
+
+			c.StartCacheInvalidator()
 			serve(conf.GetBindAddr())
 		},
 	}
@@ -80,7 +84,10 @@ func Execute() error {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
+	//deprecated, use -f
+	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "[deprecated, use -f/--file] config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
+
+	rootCmd.PersistentFlags().StringVarP(&configPath, "file", "f", "", "config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "Define the log level (default is info) [debug,info,warning,error]")
 	rootCmd.PersistentFlags().StringVarP(&logEncoding, "log-encoding", "e", "json", "Define the log format (default is json) [json,console]")
 	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", ":9412", "Address to bind http server (default is :9412)")
@@ -124,6 +131,6 @@ func initConfig() {
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("failed to open config file %s\n", err)
+		panic(err)
 	}
 }
