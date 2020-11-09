@@ -78,6 +78,9 @@ var (
 // Run executes a blocking http server. Starts the http listener with the /metrics endpoint
 // and parses all configured metrics passed by config
 func serve(reg prometheus.Gatherer, addr string) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Use the /metrics endpoint", http.StatusOK)
+	})
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { http.Error(w, "OK", http.StatusOK) })
 	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		promhttp.HandlerFor(reg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
@@ -113,7 +116,7 @@ func init() {
 	//	viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
 	viper.BindPFlag("mongodb.queryTimeout", rootCmd.PersistentFlags().Lookup("query-timeout"))
 	viper.BindEnv("mongodb.uri", "MDBEXPORTER_MONGODB_URI")
-	viper.BindEnv("mongodb.queryTimeout", "MDBEXPORTER_MONGODB_QUERY_TIMEOUT")
+	viper.BindEnv("global.queryTimeout", "MDBEXPORTER_MONGODB_QUERY_TIMEOUT")
 	viper.BindEnv("log.level", "MDBEXPORTER_LOG_LEVEL")
 	viper.BindEnv("log.encoding", "MDBEXPORTER_LOG_ENCODING")
 	viper.BindEnv("bind", "MDBEXPORTER_BIND")
