@@ -36,10 +36,6 @@ var (
 				panic(err)
 			}
 
-			if uri != "" && uri != "mongodb://localhost:27017" {
-				os.Setenv("MDBEXPORTER_SERVER_0_MONGODB_URI", uri)
-			}
-
 			var conf config.Config
 			switch configVersion {
 			case 2.0:
@@ -52,6 +48,14 @@ var (
 			err = viper.Unmarshal(&conf)
 			if err != nil {
 				panic(err)
+			}
+
+			if os.Getenv("MDBEXPORTER_MONGODB_URI") != "" {
+				os.Setenv("MDBEXPORTER_SERVER_0_MONGODB_URI", os.Getenv("MDBEXPORTER_MONGODB_URI"))
+			}
+
+			if uri != "" && uri != "mongodb://localhost:27017" {
+				os.Setenv("MDBEXPORTER_SERVER_0_MONGODB_URI", uri)
 			}
 
 			c, err = conf.Build()
@@ -106,7 +110,7 @@ func init() {
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 	viper.BindPFlag("log.encoding", rootCmd.PersistentFlags().Lookup("log-encoding"))
 	viper.BindPFlag("bind", rootCmd.PersistentFlags().Lookup("bind"))
-	viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
+	//	viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
 	viper.BindPFlag("mongodb.queryTimeout", rootCmd.PersistentFlags().Lookup("query-timeout"))
 	viper.BindEnv("mongodb.uri", "MDBEXPORTER_MONGODB_URI")
 	viper.BindEnv("mongodb.queryTimeout", "MDBEXPORTER_MONGODB_QUERY_TIMEOUT")
