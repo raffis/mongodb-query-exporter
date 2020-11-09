@@ -1,7 +1,6 @@
 package collector
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -230,7 +229,6 @@ func TestInitializeMetrics(t *testing.T) {
 				c = New()
 			}
 
-			fmt.Printf("l")
 			assert.NoError(t, c.RegisterServer("main", drv))
 
 			if test.error != "" {
