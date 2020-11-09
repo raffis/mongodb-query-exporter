@@ -8,6 +8,7 @@
 * Redesigned GO public API
 * New log implementation, the default is now json log format
 * Added new counter metric for internal stats about quries `mongodb_query_exporter_query_total`
+* Added root hint to go to /metrics
 
 ## Changes
 * Dropped interval pulling mechanism, pull is now synchronous while getting called by an http request
