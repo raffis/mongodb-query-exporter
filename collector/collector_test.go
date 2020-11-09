@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -211,9 +212,11 @@ func TestInitializeMetrics(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			drv := buildMockDriver(test.docs)
 			var c *Collector
+			var counter *prometheus.CounterVec
+			reg := prometheus.NewPedanticRegistry()
 
 			if test.counter == true {
-				counter := prometheus.NewCounterVec(
+				counter = prometheus.NewCounterVec(
 					prometheus.CounterOpts{
 						Name: "counter_total",
 						Help: "mongodb query stats",
@@ -221,11 +224,13 @@ func TestInitializeMetrics(t *testing.T) {
 					[]string{"metric", "server", "result"},
 				)
 
+				assert.NoError(t, reg.Register(counter))
 				c = New(WithCounter(counter))
 			} else {
 				c = New()
 			}
 
+			fmt.Printf("l")
 			assert.NoError(t, c.RegisterServer("main", drv))
 
 			if test.error != "" {
@@ -233,8 +238,12 @@ func TestInitializeMetrics(t *testing.T) {
 				return
 			}
 
+			assert.NoError(t, reg.Register(c))
 			assert.NoError(t, c.RegisterMetric(test.metric))
-			assert.NoError(t, testutil.CollectAndCompare(c, strings.NewReader(test.expected)))
+
+			ch := make(chan<- prometheus.Metric, 10)
+			c.Collect(ch)
+			assert.NoError(t, testutil.GatherAndCompare(reg, strings.NewReader(test.expected)))
 		})
 	}
 }
@@ -308,50 +317,3 @@ func TestCachedMetric(t *testing.T) {
 		})
 	}
 }
-
-/*
-func TestEventstreamMetrics(t *testing.T) {
-	var tests = []metricTest{
-		metricTest{
-			name: "Successful eventstream with uninitialized metric (no aggregation result)",
-			metric: &Metric{
-				Name:       "simple_counter_realtime_update",
-				Type:       "counter",
-				Value:      "total",
-				Mode:       "push",
-				Database:   "foo",
-				Collection: "bar",
-				Labels:     []string{"foo"},
-				Pipeline:   "[{\"$match\":{\"foo\":\"bar\"}}]",
-			},
-			error: "1 error occurred:\n\t* failed to update metric simple_counter_realtime_update, failed with error metric simple_counter_realtime_update aggregation returned an emtpy result set\n\n",
-			docs: []interface{}{
-				ChangeStreamEvent{
-					NS: &ChangeStreamEventNamespace{"foo", "bar"},
-				},
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			c := New(WithDriver(buildMockDriver(test.docs)))
-			c.initializeMetric(test.metric)
-			err := c.pushUpdate(test.metric)
-
-			if test.error == "" && err == nil {
-				return
-			}
-
-			if err == nil {
-				t.Error("expected error, got none")
-				return
-			}
-
-			actual := err.Error()
-			if actual != test.error {
-				t.Errorf("expected '%s', but got '%s'", test.error, err.Error())
-			}
-		})
-	}
-}*/

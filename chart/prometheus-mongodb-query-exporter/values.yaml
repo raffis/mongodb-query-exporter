@@ -3,7 +3,7 @@ affinity: {}
 annotations: {}
 
 extraArgs:
-  
+
 fullnameOverride: ""
 
 image:
@@ -27,29 +27,35 @@ mongodb:
 #The MongoDB query exporter config (required if exstingConfig.name is not set)
 config: |
 #  version: 2.0
+#  bind: 0.0.0.0:9412
 #  log:
 #    encoding: json
 #    level: info
-#  collectors:
-#  - mongodb:
-#      queryTimeout: 10
-#      maxConnection: 3
-#      defaultInterval: 5
-#    metrics:
-#    - name: myapp_example_simplevalue_total
-#      type: gauge
-#      help: 'Simple gauge metric'
-#      value: total
-#      labels: []
-#      mode: pull
-#      interval: 10
-#      constLabels: []
-#      database: mydb
-#      collection: objects
-#      pipeline: |
-#        [
-#          {"$count":"total"}
-#        ]     
+#    development: false
+#    disableCaller: false
+#  global:
+#    queryTimeout: 10
+#    maxConnection: 3
+#    defaultCache: 5
+#  servers:
+#  - name: main
+#    uri: mongodb://localhost:27017 #Will be overwritten by the "mongodb" value
+#  metrics:
+#  - name: myapp_example_simplevalue_total
+#    type: gauge #Can also be empty, the default is gauge
+#    servers: [main] #Can also be empty, if empty the metric will be used for every server defined
+#    help: 'Simple gauge metric'
+#    value: total
+#    labels: []
+#    mode: pull
+#    cache: 0
+#    constLabels: []
+#    database: mydb
+#    collection: objects
+#    pipeline: |
+#      [
+#        {"$count":"total"}
+#      ]
 
 # Name of an externally managed configmap (in the same namespace) containing the mongodb-query-exporter yaml config
 # If this is provided, the value config is ignored. Note the config needs a key named `config.yaml` which contains the query exporters config.

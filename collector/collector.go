@@ -269,6 +269,7 @@ func (c *Collector) RegisterMetric(metric *Metric) error {
 		metric.Cache = c.config.DefaultCache
 	}
 
+	c.logger.Debugf("register metric %s with pipeline %s", metric.Name, metric.pipeline)
 	c.metrics = append(c.metrics, metric)
 	return nil
 }
@@ -296,10 +297,6 @@ func (c *Collector) GetServers(names []string) []*server {
 
 // Describe is implemented with DescribeByCollect
 func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
-	if c.counter != nil {
-		c.counter.Describe(ch)
-	}
-
 	for _, metric := range c.metrics {
 		ch <- metric.desc
 	}
@@ -309,6 +306,7 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.logger.Debugf("start collecting metrics")
 	var wg sync.WaitGroup
+
 	for _, metric := range c.metrics {
 		for _, srv := range c.GetServers(metric.Servers) {
 			m, err := c.getCached(metric, srv)
@@ -342,8 +340,6 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 					"metric": metric.Name,
 					"result": result,
 				}).Inc()
-
-				c.counter.Collect(ch)
 			}(metric, srv, ch)
 		}
 	}
@@ -382,6 +378,10 @@ func (c *Collector) getCached(metric *Metric, srv *server) (prometheus.Metric, e
 // This is a non blocking operation.
 func (c *Collector) StartCacheInvalidator() error {
 	for _, metric := range c.metrics {
+		if metric.Type != ModePush {
+			continue
+		}
+
 		for _, srv := range c.GetServers(metric.Servers) {
 			go func(metric *Metric, srv *server) {
 				err := c.pushUpdate(metric, srv)
@@ -398,7 +398,7 @@ func (c *Collector) StartCacheInvalidator() error {
 
 func (c *Collector) pushUpdate(metric *Metric, srv *server) error {
 	c.logger.Infof("start changestream on %s.%s, waiting for changes", metric.Database, metric.Collection)
-	cursor, err := srv.driver.Watch(ctx, metric.Database, metric.Collection, metric.pipeline)
+	cursor, err := srv.driver.Watch(ctx, metric.Database, metric.Collection, bson.A{})
 
 	if err != nil {
 		return fmt.Errorf("failed to start changestream listener %s", err)

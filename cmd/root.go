@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/raffis/mongodb-query-exporter/collector"
 	"github.com/raffis/mongodb-query-exporter/config"
 	v1 "github.com/raffis/mongodb-query-exporter/config/v1"
 	v2 "github.com/raffis/mongodb-query-exporter/config/v2"
@@ -17,6 +18,7 @@ import (
 )
 
 var (
+	c            *collector.Collector
 	configPath   string
 	logLevel     string
 	logEncoding  string
@@ -34,10 +36,15 @@ var (
 				panic(err)
 			}
 
+			if uri != "" && uri != "mongodb://localhost:27017" {
+				os.Setenv("MDBEXPORTER_SERVER_0_MONGODB_URI", uri)
+			}
+
 			var conf config.Config
 			switch configVersion {
 			case 2.0:
 				conf = &v2.Config{}
+
 			default:
 				conf = &v1.Config{}
 			}
@@ -47,26 +54,29 @@ var (
 				panic(err)
 			}
 
-			c, err := conf.Build()
+			c, err = conf.Build()
 			if err != nil {
 				panic(err)
 			}
 
-			prometheus.MustRegister(config.Counter)
-			prometheus.MustRegister(c)
+			reg := prometheus.NewPedanticRegistry()
+			reg.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+			reg.MustRegister(prometheus.NewGoCollector())
+			reg.MustRegister(config.Counter)
+			reg.MustRegister(c)
 
 			c.StartCacheInvalidator()
-			serve(conf.GetBindAddr())
+			serve(reg, conf.GetBindAddr())
 		},
 	}
 )
 
 // Run executes a blocking http server. Starts the http listener with the /metrics endpoint
 // and parses all configured metrics passed by config
-func serve(addr string) {
+func serve(reg prometheus.Gatherer, addr string) {
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { http.Error(w, "OK", http.StatusOK) })
 	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		promhttp.Handler().ServeHTTP(w, r)
+		promhttp.HandlerFor(reg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 	})
 
 	err := http.ListenAndServe(addr, nil)
@@ -85,13 +95,13 @@ func Execute() error {
 func init() {
 	cobra.OnInitialize(initConfig)
 	//deprecated, use -f
-	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "[deprecated, use -f/--file] config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "[Deprecated, use -f/--file] config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", "mongodb://localhost:27017", "[Deprecated, use the config file or MDBEXPORTER_SERVER_0_MONGODB_URI env] MongoDB URI (default is mongodb://localhost:27017)")
 
 	rootCmd.PersistentFlags().StringVarP(&configPath, "file", "f", "", "config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "Define the log level (default is info) [debug,info,warning,error]")
 	rootCmd.PersistentFlags().StringVarP(&logEncoding, "log-encoding", "e", "json", "Define the log format (default is json) [json,console]")
 	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", ":9412", "Address to bind http server (default is :9412)")
-	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", "mongodb://localhost:27017", "MongoDB URI (default is mongodb://localhost:27017)")
 	rootCmd.PersistentFlags().IntVarP(&queryTimeout, "query-timeout", "t", 10, "Timeout for MongoDB queries")
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 	viper.BindPFlag("log.encoding", rootCmd.PersistentFlags().Lookup("log-encoding"))

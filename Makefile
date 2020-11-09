@@ -14,7 +14,9 @@
 GO     := go
 GOPATH := $(firstword $(subst :, ,$(shell $(GO) env GOPATH)))
 PROMU  := $(GOPATH)/bin/promu
-pkgs    = $(shell $(GO) list ./... | grep -v /vendor/)
+pkgs    := $(shell $(GO) list ./... | grep -v /vendor/)
+units    := $(shell $(GO) list ./... | grep -v /vendor/ | grep -v cmd)
+integrations    := $(shell $(GO) list ./... | grep cmd)
 
 PREFIX              ?= $(shell pwd)
 BIN_DIR             ?= $(shell pwd)
@@ -28,9 +30,15 @@ style:
 	@echo ">> checking code style"
 	@! gofmt -d $(shell find . -path ./vendor -prune -o -name '*.go' -print) | grep '^'
 
-test:
-	@echo ">> running tests"
-	@$(GO) test -short -race -v -coverprofile=coverage.out $(pkgs)
+test: unittest integrationtest
+
+unittest:
+	@echo ">> running unit tests"
+	@$(GO) test -short -race -v -coverprofile=coverage.out $(units)
+
+integrationtest:
+	@echo ">> running integration tests"
+	@$(GO) test -short -race -v  $(integrations)
 
 deps:
 	@echo ">> install dependencies"

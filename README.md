@@ -93,8 +93,8 @@ You may also use env variables to configure the exporter:
 
 Note if you have multiple collectors you can inject an env variable for the MongoDB connection URI like:
 
-1. `MDBEXPORTER_COLLECTOR_0_MONGODB_URI=mongodb://srv1:27017`
-2. `MDBEXPORTER_COLLECTOR_1_MONGODB_URI=mongodb://srv2:27017`
+1. `MDBEXPORTER_SERVER_0_MONGODB_URI=mongodb://srv1:27017`
+2. `MDBEXPORTER_SERVER_1_MONGODB_URI=mongodb://srv2:27017`
 3. ...
 
 ### Format v2.0
