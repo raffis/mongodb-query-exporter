@@ -16,7 +16,13 @@ jobs:
         run: echo ::set-output name=VERSION::${GITHUB_REF##*/}
       - name: Unit tests & coverage
         run: |
-          make test build
+          make test
+      - name: Integration test
+        run: |
+          make integrationtest
+      - name: Build binary
+        run: |
+          make build
       - name: Full build & docker image
         run: make docker DOCKER_IMAGE_TAG=${{ steps.get_version.outputs.VERSION }}
       - uses: shogo82148/actions-goveralls@v1
