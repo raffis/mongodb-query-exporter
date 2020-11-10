@@ -239,8 +239,8 @@ func TestInitializeMetrics(t *testing.T) {
 			assert.NoError(t, reg.Register(c))
 			assert.NoError(t, c.RegisterMetric(test.metric))
 
-			/*ch := make(chan<- prometheus.Metric, 10)
-			c.Collect(ch)*/
+			ch := make(chan<- prometheus.Metric, 10)
+			c.Collect(ch)
 			assert.NoError(t, testutil.GatherAndCompare(reg, strings.NewReader(test.expected)))
 		})
 	}
