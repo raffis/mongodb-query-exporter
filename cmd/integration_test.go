@@ -164,10 +164,6 @@ func TestMetricsConfigv2(t *testing.T) {
 	go rootCmd.Execute()
 	time.Sleep(200 * time.Millisecond)
 
-	_, err := http.Get("http://localhost:9412/metrics")
-	assert.NoError(t, err)
-
-	//Scrape a 2nd time because our query counter metric is one count behind
 	resp, err := http.Get("http://localhost:9412/metrics")
 	assert.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, 200)

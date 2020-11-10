@@ -12,10 +12,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-var (
-	ctx context.Context
-)
-
 // A collector is a metric collector group for one single MongoDB server.
 // Each collector needs a MongoDB client and a list of metrics which should be generated.
 // You may initialize multiple collectors for multiple MongoDB servers.
@@ -297,6 +293,10 @@ func (c *Collector) GetServers(names []string) []*server {
 
 // Describe is implemented with DescribeByCollect
 func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
+	if c.counter != nil {
+		c.counter.Describe(ch)
+	}
+
 	for _, metric := range c.metrics {
 		ch <- metric.desc
 	}
@@ -345,6 +345,10 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	wg.Wait()
+
+	if c.counter != nil {
+		c.counter.Collect(ch)
+	}
 }
 
 func (c *Collector) updateCache(metric *Metric, srv *server, m prometheus.Metric) {
@@ -397,6 +401,8 @@ func (c *Collector) StartCacheInvalidator() error {
 }
 
 func (c *Collector) pushUpdate(metric *Metric, srv *server) error {
+	ctx := context.Background()
+
 	c.logger.Infof("start changestream on %s.%s, waiting for changes", metric.Database, metric.Collection)
 	cursor, err := srv.driver.Watch(ctx, metric.Database, metric.Collection, bson.A{})
 

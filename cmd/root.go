@@ -63,10 +63,9 @@ var (
 				panic(err)
 			}
 
-			reg := prometheus.NewPedanticRegistry()
+			reg := prometheus.NewRegistry()
 			reg.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 			reg.MustRegister(prometheus.NewGoCollector())
-			reg.MustRegister(config.Counter)
 			reg.MustRegister(c)
 
 			c.StartCacheInvalidator()

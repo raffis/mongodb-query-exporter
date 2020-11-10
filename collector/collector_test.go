@@ -212,7 +212,7 @@ func TestInitializeMetrics(t *testing.T) {
 			drv := buildMockDriver(test.docs)
 			var c *Collector
 			var counter *prometheus.CounterVec
-			reg := prometheus.NewPedanticRegistry()
+			reg := prometheus.NewRegistry()
 
 			if test.counter == true {
 				counter = prometheus.NewCounterVec(
@@ -223,7 +223,7 @@ func TestInitializeMetrics(t *testing.T) {
 					[]string{"metric", "server", "result"},
 				)
 
-				assert.NoError(t, reg.Register(counter))
+				//assert.NoError(t, reg.Register(counter))
 				c = New(WithCounter(counter))
 			} else {
 				c = New()
@@ -239,8 +239,9 @@ func TestInitializeMetrics(t *testing.T) {
 			assert.NoError(t, reg.Register(c))
 			assert.NoError(t, c.RegisterMetric(test.metric))
 
-			ch := make(chan<- prometheus.Metric, 10)
-			c.Collect(ch)
+			/*ch := make(chan<- prometheus.Metric, 10)
+			c.Collect(ch)*/
+
 			assert.NoError(t, testutil.GatherAndCompare(reg, strings.NewReader(test.expected)))
 		})
 	}
