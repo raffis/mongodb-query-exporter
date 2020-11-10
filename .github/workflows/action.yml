@@ -8,20 +8,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - uses: actions/setup-go@v1
+      - uses: actions/setup-go@v2
         with:
           go-version: '1.15'
       - name: Get the version
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF##*/}
-      - name: Build docker image
-        run: make docker DOCKER_IMAGE_TAG=${{ steps.get_version.outputs.VERSION }}
-      - name: Integration test
-        run: |
-          make deps integrationtest
+      - name: Unit tests
+        run: make deps vet format unittest
       - name: Build binary
-        run: |
-          make build
+        run: make build
+      - name: Integration tests
+        run: make integrationtest
       - name: Build docker image
         run: make docker DOCKER_IMAGE_TAG=${{ steps.get_version.outputs.VERSION }}
       - uses: shogo82148/actions-goveralls@v1
