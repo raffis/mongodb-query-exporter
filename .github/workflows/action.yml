@@ -14,16 +14,15 @@ jobs:
       - name: Get the version
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF##*/}
-      - name: Unit tests & coverage
-        run: |
-          make test
+      - name: Build docker image
+        run: make docker DOCKER_IMAGE_TAG=${{ steps.get_version.outputs.VERSION }}
       - name: Integration test
         run: |
-          make integrationtest
+          make deps integrationtest
       - name: Build binary
         run: |
           make build
-      - name: Full build & docker image
+      - name: Build docker image
         run: make docker DOCKER_IMAGE_TAG=${{ steps.get_version.outputs.VERSION }}
       - uses: shogo82148/actions-goveralls@v1
         with:
