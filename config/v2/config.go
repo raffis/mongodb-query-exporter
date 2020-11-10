@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/raffis/mongodb-query-exporter/collector"
@@ -15,36 +16,26 @@ import (
 
 // Configuration v2.0 format
 type Config struct {
-	Bind       string
-	Log        zap.Config
-	Collectors []*Collector
-}
-
-// Collector configurations
-// Holds a MongoDB configuration as well as a list of Metrics to be generated
-type Collector struct {
-	MongoDB *MongoDB
+	Bind    string
+	Log     zap.Config
+	Global  Global
+	Servers []*Server
 	Metrics []*collector.Metric
 }
 
-// MongoDB client options
-type MongoDB struct {
-	URI               string
+type Global struct {
 	QueryTimeout      time.Duration
 	MaxConnections    int32
-	DefaultInterval   int64
+	DefaultCache      int64
+	DefaultMode       string
 	DefaultDatabase   string
 	DefaultCollection string
 }
 
-// Holds collectors
-type Exporter struct {
-	collectors []config.Collector
-}
-
-// Return list of collectors
-func (exporter *Exporter) Collectors() []config.Collector {
-	return exporter.collectors
+// MongoDB client options
+type Server struct {
+	Name string
+	URI  string
 }
 
 // Get address where the http server should be bound to
@@ -54,8 +45,7 @@ func (conf *Config) GetBindAddr() string {
 
 // Build collectors from a configuration v2.0 format and return a collection of
 // all configured collectors
-func (conf *Config) Build() (config.Exporter, error) {
-	e := &Exporter{}
+func (conf *Config) Build() (*collector.Collector, error) {
 	l, err := zap.New(conf.Log)
 
 	if err != nil {
@@ -68,20 +58,41 @@ func (conf *Config) Build() (config.Exporter, error) {
 
 	l.Sugar().Infof("will listen on %s", conf.Bind)
 
-	for id, srv := range conf.Collectors {
-		env := os.Getenv(fmt.Sprintf("MDBEXPORTER_COLLECTORS_%d_MONGODB_URI", id))
+	if conf.Global.QueryTimeout == 0 {
+		conf.Global.QueryTimeout = 10
+	}
+
+	c := collector.New(
+		collector.WithConfig(&collector.Config{
+			QueryTimeout:      conf.Global.QueryTimeout,
+			DefaultCache:      conf.Global.DefaultCache,
+			DefaultMode:       conf.Global.DefaultMode,
+			DefaultDatabase:   conf.Global.DefaultDatabase,
+			DefaultCollection: conf.Global.DefaultCollection,
+		}),
+		collector.WithLogger(l.Sugar()),
+		collector.WithCounter(config.Counter),
+	)
+
+	for id, srv := range conf.Servers {
+		env := os.Getenv(fmt.Sprintf("MDBEXPORTER_SERVER_%d_MONGODB_URI", id))
 
 		if env != "" {
-			srv.MongoDB.URI = env
+			srv.URI = env
 		}
 
-		if srv.MongoDB.URI == "" {
-			srv.MongoDB.URI = "mongodb://localhost:27017"
+		if srv.URI == "" {
+			srv.URI = "mongodb://localhost:27017"
 		}
 
-		opts := options.Client().ApplyURI(srv.MongoDB.URI)
+		opts := options.Client().ApplyURI(srv.URI)
 		l.Sugar().Infof("use mongodb hosts %#v", opts.Hosts)
 		var err error
+
+		name := srv.Name
+		if name == "" {
+			name = strings.Join(opts.Hosts, ",")
+		}
 
 		d := &collector.MongoDBDriver{}
 		err = d.Connect(context.TODO(), opts)
@@ -89,29 +100,18 @@ func (conf *Config) Build() (config.Exporter, error) {
 			panic(err)
 		}
 
-		if srv.MongoDB.QueryTimeout == 0 {
-			srv.MongoDB.QueryTimeout = 10
-		}
-
-		c := collector.New(
-			collector.WithConfig(&collector.Config{
-				QueryTimeout:      srv.MongoDB.QueryTimeout,
-				DefaultInterval:   srv.MongoDB.DefaultInterval,
-				DefaultDatabase:   srv.MongoDB.DefaultDatabase,
-				DefaultCollection: srv.MongoDB.DefaultCollection,
-			}),
-			collector.WithLogger(l.Sugar()),
-			collector.WithDriver(d),
-		)
-
-		e.collectors = append(e.collectors, c)
-
-		for _, metric := range srv.Metrics {
-			go func(metric *collector.Metric) {
-				c.WithMetric(metric)
-			}(metric)
+		err = c.RegisterServer(name, d)
+		if err != nil {
+			return c, err
 		}
 	}
 
-	return e, nil
+	for _, metric := range conf.Metrics {
+		err := c.RegisterMetric(metric)
+		if err != nil {
+			return c, err
+		}
+	}
+
+	return c, nil
 }

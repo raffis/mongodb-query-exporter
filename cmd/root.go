@@ -1,22 +1,24 @@
 package cmd
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"os/user"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/raffis/mongodb-query-exporter/collector"
 	"github.com/raffis/mongodb-query-exporter/config"
 	v1 "github.com/raffis/mongodb-query-exporter/config/v1"
 	v2 "github.com/raffis/mongodb-query-exporter/config/v2"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var (
+	c            *collector.Collector
 	configPath   string
 	logLevel     string
 	logEncoding  string
@@ -38,6 +40,7 @@ var (
 			switch configVersion {
 			case 2.0:
 				conf = &v2.Config{}
+
 			default:
 				conf = &v1.Config{}
 			}
@@ -47,22 +50,39 @@ var (
 				panic(err)
 			}
 
-			_, err = conf.Build()
+			if os.Getenv("MDBEXPORTER_MONGODB_URI") != "" {
+				os.Setenv("MDBEXPORTER_SERVER_0_MONGODB_URI", os.Getenv("MDBEXPORTER_MONGODB_URI"))
+			}
+
+			if uri != "" && uri != "mongodb://localhost:27017" {
+				os.Setenv("MDBEXPORTER_SERVER_0_MONGODB_URI", uri)
+			}
+
+			c, err = conf.Build()
 			if err != nil {
 				panic(err)
 			}
 
-			serve(conf.GetBindAddr())
+			reg := prometheus.NewRegistry()
+			reg.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+			reg.MustRegister(prometheus.NewGoCollector())
+			reg.MustRegister(c)
+
+			c.StartCacheInvalidator()
+			serve(reg, conf.GetBindAddr())
 		},
 	}
 )
 
 // Run executes a blocking http server. Starts the http listener with the /metrics endpoint
 // and parses all configured metrics passed by config
-func serve(addr string) {
+func serve(reg prometheus.Gatherer, addr string) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Use the /metrics endpoint", http.StatusOK)
+	})
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { http.Error(w, "OK", http.StatusOK) })
 	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		promhttp.Handler().ServeHTTP(w, r)
+		promhttp.HandlerFor(reg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 	})
 
 	err := http.ListenAndServe(addr, nil)
@@ -80,19 +100,22 @@ func Execute() error {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
+	//deprecated, use -f
+	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "[Deprecated, use -f/--file] config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", "mongodb://localhost:27017", "[Deprecated, use the config file or MDBEXPORTER_SERVER_0_MONGODB_URI env] MongoDB URI (default is mongodb://localhost:27017)")
+
+	rootCmd.PersistentFlags().StringVarP(&configPath, "file", "f", "", "config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "Define the log level (default is info) [debug,info,warning,error]")
 	rootCmd.PersistentFlags().StringVarP(&logEncoding, "log-encoding", "e", "json", "Define the log format (default is json) [json,console]")
 	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", ":9412", "Address to bind http server (default is :9412)")
-	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", "mongodb://localhost:27017", "MongoDB URI (default is mongodb://localhost:27017)")
 	rootCmd.PersistentFlags().IntVarP(&queryTimeout, "query-timeout", "t", 10, "Timeout for MongoDB queries")
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 	viper.BindPFlag("log.encoding", rootCmd.PersistentFlags().Lookup("log-encoding"))
 	viper.BindPFlag("bind", rootCmd.PersistentFlags().Lookup("bind"))
-	viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
+	//	viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
 	viper.BindPFlag("mongodb.queryTimeout", rootCmd.PersistentFlags().Lookup("query-timeout"))
 	viper.BindEnv("mongodb.uri", "MDBEXPORTER_MONGODB_URI")
-	viper.BindEnv("mongodb.queryTimeout", "MDBEXPORTER_MONGODB_QUERY_TIMEOUT")
+	viper.BindEnv("global.queryTimeout", "MDBEXPORTER_MONGODB_QUERY_TIMEOUT")
 	viper.BindEnv("log.level", "MDBEXPORTER_LOG_LEVEL")
 	viper.BindEnv("log.encoding", "MDBEXPORTER_LOG_ENCODING")
 	viper.BindEnv("bind", "MDBEXPORTER_BIND")
@@ -124,6 +147,6 @@ func initConfig() {
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("failed to open config file %s\n", err)
+		panic(err)
 	}
 }

@@ -7,7 +7,7 @@ Installs the [MongoDB Query Exporter](https://github.com/raffis/mongodb-query-ex
 To install the chart with the release name `my-release`:
 
 ```console
-$ helm upgrade --install my-release mongodb-query-exporter/prometheus-mongodb-exporter
+$ helm upgrade --install my-release mongodb-query-exporter/prometheus-mongodb-exporter --set mongodb.0 mongodb://mymongodb:27017
 ```
 
 This command deploys the MongoDB Exporter with the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.

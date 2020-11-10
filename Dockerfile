@@ -4,7 +4,7 @@ ADD .   /go/src/github.com/raffis/mongodb-query-exporter
 WORKDIR /go/src/github.com/raffis/mongodb-query-exporter
 
 
-RUN make all
+RUN make deps vet format build unittest
 
 FROM        gcr.io/distroless/base
 COPY        --from=builder /go/src/github.com/raffis/mongodb-query-exporter/mongodb_query_exporter /bin/mongodb_query_exporter

@@ -35,7 +35,7 @@ type Driver interface {
 	Connect(ctx context.Context, opts ...*options.ClientOptions) error
 	Ping(ctx context.Context, rp *readpref.ReadPref) error
 	Aggregate(ctx context.Context, db string, col string, pipeline bson.A) (Cursor, error)
-	Watch(ctx context.Context, db string, col string, pipeline mongo.Pipeline) (Cursor, error)
+	Watch(ctx context.Context, db string, col string, pipeline bson.A) (Cursor, error)
 }
 
 // MongoDB driver
@@ -65,6 +65,6 @@ func (mdb *MongoDBDriver) Aggregate(ctx context.Context, db string, col string, 
 }
 
 // Start an eventstream
-func (mdb *MongoDBDriver) Watch(ctx context.Context, db string, col string, pipeline mongo.Pipeline) (Cursor, error) {
+func (mdb *MongoDBDriver) Watch(ctx context.Context, db string, col string, pipeline bson.A) (Cursor, error) {
 	return mdb.client.Database(db).Collection(col).Watch(ctx, pipeline)
 }

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/raffis/mongodb-query-exporter/x/zap"
+	"github.com/tj/assert"
 )
 
 func TestBuild(t *testing.T) {
@@ -14,17 +15,10 @@ func TestBuild(t *testing.T) {
 				Encoding: "console",
 				Level:    "error",
 			},
-			Collectors: []*Collector{
-				&Collector{
-					MongoDB: &MongoDB{},
-				},
-			},
 		}
 		_, err := conf.Build()
 
-		if err != nil {
-			t.Error(err)
-		}
+		assert.NoError(t, err)
 	})
 
 	t.Run("Changed bind adress is correct", func(t *testing.T) {
@@ -38,13 +32,47 @@ func TestBuild(t *testing.T) {
 
 		_, err := conf.Build()
 
-		if err != nil {
-			t.Error(err)
+		assert.NoError(t, err)
+		assert.Equal(t, conf.GetBindAddr(), ":2222", "Expected bind address to be equal")
+	})
+
+	t.Run("Server is registered", func(t *testing.T) {
+		var conf = &Config{
+			Log: zap.Config{
+				Encoding: "console",
+				Level:    "error",
+			},
+			Servers: []*Server{
+				&Server{
+					URI: "mongodb://foo:27017,bar:27017",
+				},
+			},
 		}
 
-		if conf.GetBindAddr() != ":2222" {
-			t.Error("Expected bind address to be :2222")
+		c, err := conf.Build()
+
+		assert.NoError(t, err)
+		assert.Len(t, c.GetServers([]string{"foo:27017,bar:27017"}), 1, "Expected to found one server named foo:27017,bar:27017")
+	})
+
+	t.Run("Server name is changeable", func(t *testing.T) {
+		var conf = &Config{
+			Log: zap.Config{
+				Encoding: "console",
+				Level:    "error",
+			},
+			Servers: []*Server{
+				&Server{
+					Name: "foo",
+					URI:  "mongodb://foo:27017",
+				},
+			},
 		}
+
+		c, err := conf.Build()
+
+		assert.NoError(t, err)
+		assert.Len(t, c.GetServers([]string{"foo"}), 1, "Expected to found one server named foo")
 	})
 
 	t.Run("MongoDB URI is overwriteable by env", func(t *testing.T) {
@@ -53,32 +81,23 @@ func TestBuild(t *testing.T) {
 				Encoding: "console",
 				Level:    "error",
 			},
-			Collectors: []*Collector{
-				&Collector{
-					MongoDB: &MongoDB{
-						URI: "mongodb://foo:27017",
-					},
+			Servers: []*Server{
+				&Server{
+					Name: "foo",
+					URI:  "mongodb://foo:27017",
 				},
-				&Collector{
-					MongoDB: &MongoDB{
-						URI: "mongodb://foo2:27017",
-					},
+				&Server{
+					Name: "foo2",
+					URI:  "mongodb://foo2:27017",
 				},
 			},
 		}
 
-		os.Setenv("MDBEXPORTER_COLLECTORS_0_MONGODB_URI", "mongodb://bar:27017")
-		os.Setenv("MDBEXPORTER_COLLECTORS_1_MONGODB_URI", "mongodb://bar2:27017")
+		os.Setenv("MDBEXPORTER_SERVER_0_MONGODB_URI", "mongodb://bar:27017")
+		os.Setenv("MDBEXPORTER_SERVER_1_MONGODB_URI", "mongodb://bar2:27017")
 		_, err := conf.Build()
-		if err != nil {
-			t.Error(err)
-		}
-
-		if conf.Collectors[0].MongoDB.URI != "mongodb://bar:27017" {
-			t.Errorf("Expected conf.Collectors[0].MongoDB.URI to be mongodb://bar:27017 but is %s", conf.Collectors[0].MongoDB.URI)
-		}
-		if conf.Collectors[1].MongoDB.URI != "mongodb://bar2:27017" {
-			t.Errorf("Expected conf.Collectors[1].MongoDB.URI to be mongodb://bar2:27017 but is %s", conf.Collectors[1].MongoDB.URI)
-		}
+		assert.NoError(t, err)
+		assert.Equal(t, conf.Servers[0].URI, "mongodb://bar:27017", "Expected conf.Collectors[0].MongoDB.URI to be mongodb://bar:27017")
+		assert.Equal(t, conf.Servers[1].URI, "mongodb://bar2:27017", "Expected conf.Collectors[0].MongoDB.URI to be mongodb://bar2:27017")
 	})
 }
