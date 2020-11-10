@@ -22,7 +22,8 @@ jobs:
         run: make integrationtest
       - name: Build docker image
         run: make docker DOCKER_IMAGE_TAG=${{ steps.get_version.outputs.VERSION }}
-      - uses: shogo82148/actions-goveralls@v1
+      - name: Send go coverage report
+        uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: coverage.out
       - name: Create beta Release
