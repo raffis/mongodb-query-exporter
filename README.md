@@ -171,6 +171,8 @@ metrics:
     ]
 ```
 
+See more examples in the `/examples` folder.
+
 ### Format v1.0
 
 The config version v1.0 is the predescer of v2.0 and does not have support for multiple MongoDB servers
