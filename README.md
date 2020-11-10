@@ -171,7 +171,7 @@ metrics:
     ]
 ```
 
-See more examples in the `/examples` folder.
+See more examples in the `/example` folder.
 
 ### Format v1.0
 
