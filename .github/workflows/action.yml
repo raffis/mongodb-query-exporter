@@ -90,4 +90,4 @@ jobs:
         id: lint
         uses: WyriHaximus/github-action-helm3@v2
         with:
-          exec: helm lint chart/
+          exec: helm lint chart/prometheus-mongodb-query-exporter

@@ -21,7 +21,7 @@ livenessProbe:
 
 
 #List of MongoDB servers (Injected as secret env)
-mongodb:
+mongodb: []
 #- [mongodb[+srv]://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
 
 #The MongoDB query exporter config (required if exstingConfig.name is not set)
