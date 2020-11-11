@@ -12,4 +12,4 @@ keywords:
 name: prometheus-mongodb-query-exporter
 sources:
 - https://github.com/raffis/mongodb-query-exporter
-version: 1.0.1
+version: 1.0.2

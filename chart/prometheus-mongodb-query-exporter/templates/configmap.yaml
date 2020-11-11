@@ -8,7 +8,9 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     helm.sh/chart: {{ include "prometheus-mongodb-query-exporter.chart" . }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
 data:
   config.yaml: |
-    {{ .Values.config }}
+    {{ .Values.config | nindent 4}}
 {{- end -}}
