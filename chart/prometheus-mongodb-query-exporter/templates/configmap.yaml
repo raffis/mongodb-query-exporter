@@ -10,5 +10,5 @@ metadata:
     helm.sh/chart: {{ include "prometheus-mongodb-query-exporter.chart" . }}
 data:
   config.yaml: |
-    {{ .Values.config }}
+    {{- .Values.config | nindent 4 }}
 {{- end -}}
