@@ -1,8 +1,8 @@
-{{- if not .Values.existingConfig.name  -}}
-apiVersion: v1
-kind: ConfigMap
+{{- if .Values.podSecurityPolicy.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
-  name: {{ include "prometheus-mongodb-query-exporter.configName" . }}
+  name: {{ template "prometheus-mongodb-query-exporter.fullname" . }}
   labels:
     app.kubernetes.io/name: {{ include "prometheus-mongodb-query-exporter.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -10,7 +10,10 @@ metadata:
     helm.sh/chart: {{ include "prometheus-mongodb-query-exporter.chart" . }}
   annotations:
     {{- toYaml .Values.annotations | nindent 4 }}
-data:
-  config.yaml: |
-    {{ .Values.config | nindent 4}}
-{{- end -}}
+rules:
+- apiGroups: ['extensions']
+  resources: ['podsecuritypolicies']
+  verbs:     ['use']
+  resourceNames:
+  - {{ template "prometheus-mongodb-query-exporter.fullname" . }}
+{{- end }}

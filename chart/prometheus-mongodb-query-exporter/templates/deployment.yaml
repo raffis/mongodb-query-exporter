@@ -40,6 +40,18 @@ spec:
             value: "{{ $value }}"
         {{- end }}
         {{- end }}
+        {{- range $key, $value := .Values.extraEnvSecrets }}
+          - name: {{ $key }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ required "Must specify secret!" $value.secret }}
+                key: {{ required "Must specify key!" $value.key }}
+          {{- end }}
+        {{- if .Values.envFromSecret }}
+        envFrom:
+        - secretRef:
+            name: {{ .Values.envFromSecret }}
+        {{- end }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
@@ -61,7 +73,14 @@ spec:
           {{- toYaml .Values.securityContext | nindent 10 }}
         volumeMounts:
         - name: config
-          mountPath: /etc/mongodb-query-expporter
+          mountPath: /etc/mongodb-query-exporter
+        {{- range .Values.secretMounts }}
+        - name: {{ .name }}
+          mountPath: {{ .path }}
+          {{- if .subPath }}
+          subPath: {{ .subPath }}
+          {{- end }}
+        {{- end }}
       {{- if .Values.extraContainers }}
       {{- toYaml .Values.extraContainers | nindent 6 }}
       {{- end }}
@@ -69,6 +88,11 @@ spec:
       - name: config
         configMap:
           name: {{ include "prometheus-mongodb-query-exporter.configName" . }}
+      {{- range .Values.secretMounts }}
+      - name: {{ .name }}
+        secret:
+          secretName: {{ .secretName }}
+      {{- end }}
       affinity:
         {{- toYaml .Values.affinity | nindent 8 }}
       imagePullSecrets:

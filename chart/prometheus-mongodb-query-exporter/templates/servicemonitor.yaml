@@ -14,6 +14,8 @@ metadata:
   {{- if .Values.serviceMonitor.namespace }}
   namespace: {{ .Values.serviceMonitor.namespace }}
   {{- end }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
 spec:
   endpoints:
   - port: metrics
@@ -22,6 +24,7 @@ spec:
     {{- if .Values.serviceMonitor.metricRelabelings }}
     metricRelabelings: {{ toYaml .Values.serviceMonitor.metricRelabelings | nindent 4 }}
     {{- end }}
+
   namespaceSelector:
     matchNames:
     - {{ .Release.Namespace }}
@@ -35,5 +38,5 @@ spec:
     - {{ . }}
 {{- end }}
 {{- end }}
+  sampleLimit: {{ .Values.serviceMonitor.sampleLimit }}
 {{- end }}
-

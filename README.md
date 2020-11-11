@@ -27,12 +27,7 @@ Get Prometheus MongoDB aggregation query exporter, either as a [binary](https://
 
 ### Helm Chart
 For kubernetes users there is an official helm chart for the MongoDB query exporter.
-
-Install the chart (Note only helm 3 is supported):
-```
-helm repo add mongodb-query-exporter
-helm install mongodb-query-exporter mongodb-query-exporter/mongodb-query-exporter
-```
+Please read the installation instructions [here](https://github.com/raffis/mongodb-query-exporter/blob/master/chart/prometheus-mongodb-query-exporter/README.md).
 
 ## Usage
 
@@ -42,7 +37,7 @@ $ mongodb_query_exporter
 
 Use the `-help` flag to get help information.
 
-If you use [MongoDB Authorization](https://docs.mongodb.org/manual/core/authorization/), best practices is to create a dedicated readonly user:
+If you use [MongoDB Authorization](https://docs.mongodb.org/manual/core/authorization/), best practices is to create a dedicated readonly user with access to all databases/collections required:
 
 1. Create a user with '*read*' on your database, like the following (*replace username/password/db!*):
 
@@ -90,7 +85,7 @@ You may also use env variables to configure the exporter:
 | MDBEXPORTER_LOG_ENCODING | Log format                               |
 | MDBEXPORTER_BIND         | Bind address for the HTTP server         |
 
-Note if you have multiple collectors you can inject an env variable for the MongoDB connection URI like:
+Note if you have multiple MongoDB servers you can inject an env variable for each instead using `MDBEXPORTER_MONGODB_URI`:
 
 1. `MDBEXPORTER_SERVER_0_MONGODB_URI=mongodb://srv1:27017`
 2. `MDBEXPORTER_SERVER_1_MONGODB_URI=mongodb://srv2:27017`
@@ -99,10 +94,9 @@ Note if you have multiple collectors you can inject an env variable for the Mong
 ### Format v2.0
 
 The config format v2.0 is not supported in any version before `v1.0.0-beta5`. Please use v1.0 or upgrade to the latest version otherwise.
+Starting with v1.0.0-beta5 the v2.0 format is the preferred version.
 
 Example:
-**`config.yml`**
-
 ```yaml
 version: 2.0
 bind: 0.0.0.0:9412
@@ -170,17 +164,13 @@ metrics:
     ]
 ```
 
-See more examples in the `/example` folder.
+See more examples in the `/examples` folder.
 
 ### Format v1.0
 
-The config version v1.0 is the predescer of v2.0 and does not have support for multiple MongoDB servers
-nor is it possible to customize logging.
-When possible use v2.0 however v1.0 support won't be dropped.
+The config version v1.0 has some disadvantages over v2.0 including no support for multiple MongoDB servers.
 
 Example:
-**`config.yml`**
-
 ```yaml
 version: 1.0
 bind: 0.0.0.0:9412
@@ -242,10 +232,12 @@ metrics:
 ```
 
 ## Cache & Push
-Prometheus is designed to scrape metrics (meaning pull). During each scrape the mongodb-query-exporter will evaluate all configured metrics.
+Prometheus is designed to scrape metrics. During each scrape the mongodb-query-exporter will evaluate all configured metrics.
 If you have expensive queries there is an option to cache the aggregation result by setting a cache ttl in secconds.
-However it is more effective to **avoid cache** and design good aggregation pipelines or use a different scrape interval or use the **push** mode.
+However it is more effective to **avoid cache** and design good aggregation pipelines. In some cases a different scrape interval might also be a solution.
 For individual metrics and/or MongoDB servers older than 3.6 it might still be a good option though.
+
+A better approach is using push instead a static cache, see bellow.
 
 Example:
 ```yaml
@@ -264,8 +256,8 @@ metrics:
     ]
 ```
 
-A better approach of reducing load on the MongoDB server is the supported push mode. The push automatically caches the metric at scrape time. However the cache for a metric with mode push
-will be invalidated automatically if anything changes on the configured MongoDB collection. Meaning the aggregation will only be executed if there have been changes during scrape intervals.
+To reduce load on the MongoDB server (and also scrape time) there is a push mode. Push automatically caches the metric at scrape time preferred (If no cache ttl is set). However the cache for a metric with mode push
+will be invalidated automatically if anything changes within the configured MongoDB collection. Meaning the aggregation will only be executed if there have been changes during scrape intervals.
 
 >**Note**: This requires at least MongoDB 3.6.
 
@@ -287,7 +279,7 @@ metrics:
 ```
 
 ## Debug
-The mongodb-query-exporters also publishes a counter metric called `mongodb_query_exporter_query_total` which publishes query results for each configured metric.
+The mongodb-query-exporters also publishes a counter metric called `mongodb_query_exporter_query_total` which counts query results for each configured metric.
 Furthermore you might increase the log level to get more insight.
 
 ## Go API
