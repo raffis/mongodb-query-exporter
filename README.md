@@ -10,7 +10,6 @@ MongoDB aggregation query exporter for [Prometheus](https://prometheus.io).
 ## Features
 
 * Support for gauge metrics
-* Multiple metrics for different db/collections
 * Pull and Push (Push is only supported for MongoDB >= 3.6)
 * Supports multiple MongoDB servers
 * Public API for Golang
