@@ -22,58 +22,22 @@ type Collector struct {
 	metrics []*Metric
 	counter *prometheus.CounterVec
 	cache   map[string]*cacheEntry
+	mutex   *sync.Mutex
 }
 
+// A cached metric consists of the metric and a ttl in seconds
 type cacheEntry struct {
 	m   prometheus.Metric
 	ttl int64
 }
 
+// A server needs a driver (implementation) and a unique name
 type server struct {
 	name   string
 	driver Driver
 }
 
 type option func(c *Collector)
-
-// Create a new collector
-func New(opts ...option) *Collector {
-	c := &Collector{
-		logger: &dummyLogger{},
-		config: &Config{
-			QueryTimeout: 10,
-		},
-	}
-
-	c.cache = make(map[string]*cacheEntry)
-
-	for _, opt := range opts {
-		opt(c)
-	}
-
-	return c
-}
-
-// Pass a counter metrics about query stats
-func WithCounter(m *prometheus.CounterVec) option {
-	return func(c *Collector) {
-		c.counter = m
-	}
-}
-
-// Pass a logger to the collector
-func WithLogger(l Logger) option {
-	return func(c *Collector) {
-		c.logger = l
-	}
-}
-
-// Pass a collector configuration (Defaults for metrics)
-func WithConfig(conf *Config) option {
-	return func(c *Collector) {
-		c.config = conf
-	}
-}
 
 // Collector configuration with default metric configurations
 type Config struct {
@@ -124,105 +88,44 @@ const (
 	ModePush = "push"
 )
 
-func (c *Collector) generateMetrics(metric *Metric, srv *server, ch chan<- prometheus.Metric) error {
-	c.logger.Debugf("generate metric %s from server %s", metric.Name, srv.name)
-
-	ctx, cancel := context.WithTimeout(context.Background(), c.config.QueryTimeout*time.Second)
-	defer cancel()
-
-	cursor, err := srv.driver.Aggregate(ctx, metric.Database, metric.Collection, metric.pipeline)
-
-	if err != nil {
-		return err
+// Create a new collector
+func New(opts ...option) *Collector {
+	c := &Collector{
+		logger: &dummyLogger{},
+		config: &Config{
+			QueryTimeout: 10,
+		},
 	}
 
-	var multierr *multierror.Error
-	var i int
+	c.cache = make(map[string]*cacheEntry)
+	c.mutex = &sync.Mutex{}
 
-	for cursor.Next(ctx) {
-		i++
-		var result AggregationResult
-
-		err := cursor.Decode(&result)
-		c.logger.Debugf("found record %s from metric %s", result, metric.Name)
-
-		if err != nil {
-			multierr = multierror.Append(multierr, err)
-			c.logger.Errorf("failed decode record %s", err)
-			continue
-		}
-
-		m, err := createMetric(metric, result)
-
-		if err != nil {
-			return err
-		}
-
-		c.updateCache(metric, srv, m)
-		ch <- m
+	for _, opt := range opts {
+		opt(c)
 	}
 
-	if i == 0 {
-		return fmt.Errorf("metric %s aggregation returned an emtpy result set", metric.Name)
-	}
-
-	return multierr.ErrorOrNil()
+	return c
 }
 
-func createMetric(metric *Metric, result AggregationResult) (prometheus.Metric, error) {
-	value, err := metric.getValue(result)
-	if err != nil {
-		return nil, err
+// Pass a counter metrics about query stats
+func WithCounter(m *prometheus.CounterVec) option {
+	return func(c *Collector) {
+		c.counter = m
 	}
-
-	labels, err := metric.getLabels(result)
-	if err != nil {
-		return nil, err
-	}
-
-	return prometheus.NewConstMetric(metric.desc, prometheus.GaugeValue, value, labels...)
 }
 
-func (metric *Metric) getValue(result AggregationResult) (float64, error) {
-	if val, ok := result[metric.Value]; ok {
-		switch val.(type) {
-		case float32:
-			value := float64(val.(float32))
-			return value, nil
-		case float64:
-			value := val.(float64)
-			return value, nil
-		case int32:
-			value := float64(val.(int32))
-			return value, nil
-		case int64:
-			value := float64(val.(int64))
-			return value, nil
-		default:
-			return 0, fmt.Errorf("provided value taken from the aggregation result has to be a number, type %T given", val)
-		}
+// Pass a logger to the collector
+func WithLogger(l Logger) option {
+	return func(c *Collector) {
+		c.logger = l
 	}
-
-	return 0, ErrValueNotFound
 }
 
-func (metric *Metric) getLabels(result AggregationResult) ([]string, error) {
-	var labels []string
-
-	for _, label := range metric.Labels {
-		if val, ok := result[label]; ok {
-			switch val.(type) {
-			case string:
-				labels = append(labels, val.(string))
-			default:
-				return labels, fmt.Errorf("provided label value taken from the aggregation result has to be a string, type %T given", val)
-			}
-		} else {
-			return labels, fmt.Errorf("required label %s not found in result set", label)
-		}
+// Pass a collector configuration (Defaults for metrics)
+func WithConfig(conf *Config) option {
+	return func(c *Collector) {
+		c.config = conf
 	}
-
-	return labels, nil
 }
 
 // Run metric c for each metric either in push or pull mode
@@ -352,20 +255,31 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 }
 
 func (c *Collector) updateCache(metric *Metric, srv *server, m prometheus.Metric) {
+	var ttl int64 = 0
+
 	if (metric.Mode == ModePush && metric.Cache == 0) || metric.Cache == -1 {
 		c.logger.Debugf("cache metric %s until new push", metric.Name)
-		c.cache[metric.Name+srv.name] = &cacheEntry{m, -1}
+		ttl = -1
+
 	} else if metric.Cache > 0 {
 		c.logger.Debugf("cache metric %s for %d", metric.Name, metric.Cache)
-		c.cache[metric.Name+srv.name] = &cacheEntry{m, time.Now().Unix() + metric.Cache}
+		ttl = time.Now().Unix() + metric.Cache
 	} else {
 		c.logger.Debugf("skip cache for %s", metric.Name)
+		return
 	}
+
+	c.mutex.Lock()
+	c.cache[metric.Name+srv.name] = &cacheEntry{m, ttl}
+	c.mutex.Unlock()
 }
 
 func (c *Collector) getCached(metric *Metric, srv *server) (prometheus.Metric, error) {
+	c.mutex.Lock()
+
 	if e, exists := c.cache[metric.Name+srv.name]; exists {
 		if e.ttl == -1 || e.ttl >= time.Now().Unix() {
+			c.mutex.Unlock()
 			return e.m, nil
 		}
 
@@ -373,6 +287,7 @@ func (c *Collector) getCached(metric *Metric, srv *server) (prometheus.Metric, e
 		delete(c.cache, metric.Name+srv.name)
 	}
 
+	c.mutex.Unlock()
 	return nil, ErrNotCached
 }
 
@@ -422,8 +337,111 @@ func (c *Collector) pushUpdate(metric *Metric, srv *server) error {
 		}
 
 		//Invalidate cached entry, aggregation must be executed during the next scrape
+		c.mutex.Lock()
 		delete(c.cache, metric.Name+srv.name)
+		c.mutex.Unlock()
 	}
 
 	return nil
+}
+
+func (c *Collector) generateMetrics(metric *Metric, srv *server, ch chan<- prometheus.Metric) error {
+	c.logger.Debugf("generate metric %s from server %s", metric.Name, srv.name)
+
+	ctx, cancel := context.WithTimeout(context.Background(), c.config.QueryTimeout*time.Second)
+	defer cancel()
+
+	cursor, err := srv.driver.Aggregate(ctx, metric.Database, metric.Collection, metric.pipeline)
+
+	if err != nil {
+		return err
+	}
+
+	var multierr *multierror.Error
+	var i int
+
+	for cursor.Next(ctx) {
+		i++
+		var result AggregationResult
+
+		err := cursor.Decode(&result)
+		c.logger.Debugf("found record %s from metric %s", result, metric.Name)
+
+		if err != nil {
+			multierr = multierror.Append(multierr, err)
+			c.logger.Errorf("failed decode record %s", err)
+			continue
+		}
+
+		m, err := createMetric(metric, result)
+
+		if err != nil {
+			return err
+		}
+
+		c.updateCache(metric, srv, m)
+		ch <- m
+	}
+
+	if i == 0 {
+		return fmt.Errorf("metric %s aggregation returned an emtpy result set", metric.Name)
+	}
+
+	return multierr.ErrorOrNil()
+}
+
+func createMetric(metric *Metric, result AggregationResult) (prometheus.Metric, error) {
+	value, err := metric.getValue(result)
+	if err != nil {
+		return nil, err
+	}
+
+	labels, err := metric.getLabels(result)
+	if err != nil {
+		return nil, err
+	}
+
+	return prometheus.NewConstMetric(metric.desc, prometheus.GaugeValue, value, labels...)
+}
+
+func (metric *Metric) getValue(result AggregationResult) (float64, error) {
+	if val, ok := result[metric.Value]; ok {
+		switch val.(type) {
+		case float32:
+			value := float64(val.(float32))
+			return value, nil
+		case float64:
+			value := val.(float64)
+			return value, nil
+		case int32:
+			value := float64(val.(int32))
+			return value, nil
+		case int64:
+			value := float64(val.(int64))
+			return value, nil
+		default:
+			return 0, fmt.Errorf("provided value taken from the aggregation result has to be a number, type %T given", val)
+		}
+	}
+
+	return 0, ErrValueNotFound
+}
+
+func (metric *Metric) getLabels(result AggregationResult) ([]string, error) {
+	var labels []string
+
+	for _, label := range metric.Labels {
+		if val, ok := result[label]; ok {
+			switch val.(type) {
+			case string:
+				labels = append(labels, val.(string))
+			default:
+				return labels, fmt.Errorf("provided label value taken from the aggregation result has to be a string, type %T given", val)
+			}
+		} else {
+			return labels, fmt.Errorf("required label %s not found in result set", label)
+		}
+	}
+
+	return labels, nil
 }

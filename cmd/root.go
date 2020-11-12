@@ -5,14 +5,13 @@ import (
 	"os"
 	"os/user"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/raffis/mongodb-query-exporter/collector"
 	"github.com/raffis/mongodb-query-exporter/config"
 	v1 "github.com/raffis/mongodb-query-exporter/config/v1"
 	v2 "github.com/raffis/mongodb-query-exporter/config/v2"
-	log "github.com/sirupsen/logrus"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -63,13 +62,9 @@ var (
 				panic(err)
 			}
 
-			reg := prometheus.NewRegistry()
-			reg.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
-			reg.MustRegister(prometheus.NewGoCollector())
-			reg.MustRegister(c)
-
+			prometheus.MustRegister(c)
 			c.StartCacheInvalidator()
-			serve(reg, conf.GetBindAddr())
+			serve(prometheus.DefaultGatherer, conf.GetBindAddr())
 		},
 	}
 )
@@ -112,7 +107,7 @@ func init() {
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 	viper.BindPFlag("log.encoding", rootCmd.PersistentFlags().Lookup("log-encoding"))
 	viper.BindPFlag("bind", rootCmd.PersistentFlags().Lookup("bind"))
-	//	viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
+	viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
 	viper.BindPFlag("mongodb.queryTimeout", rootCmd.PersistentFlags().Lookup("query-timeout"))
 	viper.BindEnv("mongodb.uri", "MDBEXPORTER_MONGODB_URI")
 	viper.BindEnv("global.queryTimeout", "MDBEXPORTER_MONGODB_QUERY_TIMEOUT")
@@ -134,8 +129,7 @@ func initConfig() {
 		// Find home directory.
 		usr, err := user.Current()
 		if err != nil {
-			log.Error(err)
-			return
+			panic(err)
 		}
 
 		// System wide config
