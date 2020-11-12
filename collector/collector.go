@@ -276,10 +276,10 @@ func (c *Collector) updateCache(metric *Metric, srv *server, m prometheus.Metric
 
 func (c *Collector) getCached(metric *Metric, srv *server) (prometheus.Metric, error) {
 	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
 	if e, exists := c.cache[metric.Name+srv.name]; exists {
 		if e.ttl == -1 || e.ttl >= time.Now().Unix() {
-			c.mutex.Unlock()
 			return e.m, nil
 		}
 
@@ -287,7 +287,6 @@ func (c *Collector) getCached(metric *Metric, srv *server) (prometheus.Metric, e
 		delete(c.cache, metric.Name+srv.name)
 	}
 
-	c.mutex.Unlock()
 	return nil, ErrNotCached
 }
 
