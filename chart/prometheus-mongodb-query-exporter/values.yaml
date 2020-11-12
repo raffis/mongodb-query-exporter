@@ -9,7 +9,7 @@ fullnameOverride: ""
 image:
   pullPolicy: IfNotPresent
   repository: raffis/mongodb-query-exporter
-  tag: v1.0.0-beta5
+  tag: v1.0.0-beta6
 
 imagePullSecrets: []
 
