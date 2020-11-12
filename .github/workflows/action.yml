@@ -71,6 +71,7 @@ jobs:
           asset_name: mongodb_query_exporter
           asset_content_type: application/octet-stream
       - name: Publish to DockerHub
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
           name: raffis/mongodb-query-exporter:${{ steps.get_version.outputs.VERSION }}
