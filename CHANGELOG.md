@@ -1,6 +1,15 @@
+# 1.0.0-beta6
+**Date**: Thu Nov 12 22:35:21 CET 2020
+
+## Bugfixes
+* Protect cache from concurrent access
+
+## Changes
+* User default prometheus registry instead a custom on
+
+
 # 1.0.0-beta5
-**Maintainer**: Raffael Sahli <public@raffaelsahli.com>\
-**Date**: Tue Mar 24 15:57:21 CEST 2020
+**Date**: Wed Nov 11 22:33:21 CET 2020
 
 ## Features
 * Support for multiple MongoDB servers
@@ -22,7 +31,6 @@
 
 
 # 1.0.0-beta4
-**Maintainer**: Raffael Sahli <public@raffaelsahli.com>\
 **Date**: Tue Mar 24 15:57:21 CET 2020
 
 ## Bugfixes
@@ -39,7 +47,6 @@
 
 
 # 1.0.0-beta3
-**Maintainer**: Raffael Sahli <public@raffaelsahli.com>\
 **Date**: Fri Mar 13 16:33:22 CET 2020
 
 ## Bugfixes
