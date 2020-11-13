@@ -4,6 +4,7 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/raffis/mongodb-query-exporter?tab=subdirectories)](https://pkg.go.dev/github.com/raffis/mongodb-query-exporter?tab=subdirectories)
 [![Coverage Status](https://coveralls.io/repos/github/raffis/mongodb-query-exporter/badge.svg?branch=master)](https://coveralls.io/github/raffis/mongodb-query-exporter?branch=master)
 [![Docker Pulls](https://img.shields.io/docker/pulls/raffis/mongodb-query-exporter.svg?maxAge=604800)](https://hub.docker.com/r/raffis/mongodb-query-exporter)
+[![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/prometheus-mongodb-query-exporter)](https://artifacthub.io/packages/search?repo=prometheus-mongodb-query-exporter)
 
 MongoDB aggregation query exporter for [Prometheus](https://prometheus.io).
 
