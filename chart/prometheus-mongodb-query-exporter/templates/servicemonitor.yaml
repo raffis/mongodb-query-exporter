@@ -19,6 +19,7 @@ metadata:
 spec:
   endpoints:
   - port: metrics
+    path: {{ .Values.metricsPath }}
     interval: {{ .Values.serviceMonitor.interval }}
     scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
     {{- if .Values.serviceMonitor.metricRelabelings }}

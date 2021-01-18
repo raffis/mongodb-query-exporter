@@ -16,11 +16,12 @@ import (
 
 // Configuration v2.0 format
 type Config struct {
-	Bind    string
-	Log     zap.Config
-	Global  Global
-	Servers []*Server
-	Metrics []*collector.Metric
+	Bind        string
+	MetricsPath string
+	Log         zap.Config
+	Global      Global
+	Servers     []*Server
+	Metrics     []*collector.Metric
 }
 
 type Global struct {
@@ -43,6 +44,11 @@ func (conf *Config) GetBindAddr() string {
 	return conf.Bind
 }
 
+// Get metrics path
+func (conf *Config) GetMetricsPath() string {
+	return conf.MetricsPath
+}
+
 // Build collectors from a configuration v2.0 format and return a collection of
 // all configured collectors
 func (conf *Config) Build() (*collector.Collector, error) {
@@ -50,6 +56,12 @@ func (conf *Config) Build() (*collector.Collector, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	if conf.MetricsPath == "" {
+		conf.MetricsPath = "/metrics"
+	} else if conf.MetricsPath == "/healthz" {
+		return nil, fmt.Errorf("/healthz not allowed as metrics path")
 	}
 
 	if conf.Bind == "" {

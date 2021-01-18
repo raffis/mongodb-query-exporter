@@ -1,5 +1,6 @@
 version: 2.0
 bind: 0.0.0.0:9412
+metricsPath: /metrics
 log:
   encoding: json
   level: info

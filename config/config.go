@@ -8,6 +8,7 @@ import (
 // A configuration format to build a Collector from
 type Config interface {
 	GetBindAddr() string
+	GetMetricsPath() string
 	Build() (*collector.Collector, error)
 }
 

@@ -9,7 +9,7 @@ fullnameOverride: ""
 image:
   pullPolicy: IfNotPresent
   repository: raffis/mongodb-query-exporter
-  tag: v1.0.0-beta6
+  tag: v1.0.0-beta7
 
 imagePullSecrets: []
 
@@ -86,6 +86,9 @@ podAnnotations: {}
 #  prometheus.io/port: "metrics"
 
 port: "9412"
+
+# Change the metrics path
+metricsPath: /metrics
 
 priorityClassName: ""
 

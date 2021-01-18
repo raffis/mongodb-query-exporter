@@ -1,3 +1,13 @@
+# 1.0.0-beta7
+**Date**: Mon Jan 18 21:34:20 CET 2020
+
+## Bugfixes
+* Fixes missing Path in ServiceMonitor helm chart
+
+## Features
+* Support changeable metrics path #19
+
+
 # 1.0.0-beta6
 **Date**: Thu Nov 12 22:35:21 CET 2020
 
