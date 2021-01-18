@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"os/user"
@@ -23,6 +24,7 @@ var (
 	logEncoding  string
 	bind         string
 	uri          string
+	metricsPath  string
 	queryTimeout int
 	rootCmd      = &cobra.Command{
 		Use:   "mongodb_query_exporter",
@@ -64,23 +66,25 @@ var (
 
 			prometheus.MustRegister(c)
 			c.StartCacheInvalidator()
-			serve(prometheus.DefaultGatherer, conf.GetBindAddr())
+			serve(prometheus.DefaultGatherer, conf)
 		},
 	}
 )
 
-// Run executes a blocking http server. Starts the http listener with the /metrics endpoint
-// and parses all configured metrics passed by config
-func serve(reg prometheus.Gatherer, addr string) {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "Use the /metrics endpoint", http.StatusOK)
-	})
+// Run executes a blocking http server. Starts the http listener with the metrics and healthz endpoints.
+func serve(reg prometheus.Gatherer, conf config.Config) {
+	if conf.GetMetricsPath() != "/" {
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, fmt.Sprintf("Use the %s endpoint", conf.GetMetricsPath()), http.StatusOK)
+		})
+	}
+
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) { http.Error(w, "OK", http.StatusOK) })
-	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc(conf.GetMetricsPath(), func(w http.ResponseWriter, r *http.Request) {
 		promhttp.HandlerFor(reg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 	})
 
-	err := http.ListenAndServe(addr, nil)
+	err := http.ListenAndServe(conf.GetBindAddr(), nil)
 
 	// If the port is already in use or another fatal error panic
 	if err != nil {
@@ -103,10 +107,12 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "Define the log level (default is info) [debug,info,warning,error]")
 	rootCmd.PersistentFlags().StringVarP(&logEncoding, "log-encoding", "e", "json", "Define the log format (default is json) [json,console]")
 	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", ":9412", "Address to bind http server (default is :9412)")
+	rootCmd.PersistentFlags().StringVarP(&metricsPath, "path", "p", "/metrics", "Metric path (default is /metrics)")
 	rootCmd.PersistentFlags().IntVarP(&queryTimeout, "query-timeout", "t", 10, "Timeout for MongoDB queries")
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 	viper.BindPFlag("log.encoding", rootCmd.PersistentFlags().Lookup("log-encoding"))
 	viper.BindPFlag("bind", rootCmd.PersistentFlags().Lookup("bind"))
+	viper.BindPFlag("metricsPath", rootCmd.PersistentFlags().Lookup("path"))
 	viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
 	viper.BindPFlag("mongodb.queryTimeout", rootCmd.PersistentFlags().Lookup("query-timeout"))
 	viper.BindEnv("mongodb.uri", "MDBEXPORTER_MONGODB_URI")
@@ -114,6 +120,7 @@ func init() {
 	viper.BindEnv("log.level", "MDBEXPORTER_LOG_LEVEL")
 	viper.BindEnv("log.encoding", "MDBEXPORTER_LOG_ENCODING")
 	viper.BindEnv("bind", "MDBEXPORTER_BIND")
+	viper.BindEnv("metricsPath", "MDBEXPORTER_METRICSPATH")
 }
 
 func initConfig() {

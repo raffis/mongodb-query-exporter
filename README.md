@@ -65,7 +65,7 @@ mongodb://CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST=myState,C=myCountry@loc
 ```
 
 ## Access metrics
-The metrics are exposed at `/metrics`.
+The metrics are by default exposed at `/metrics`.
 
 ```
 curl localhost:9412/metrics
@@ -85,6 +85,7 @@ You may also use env variables to configure the exporter:
 | MDBEXPORTER_LOG_LEVEL    | Log level                                |
 | MDBEXPORTER_LOG_ENCODING | Log format                               |
 | MDBEXPORTER_BIND         | Bind address for the HTTP server         |
+| MDBEXPORTER_METRICSPATH  | Change the metrics path (/metrics)       |
 
 Note if you have multiple MongoDB servers you can inject an env variable for each instead using `MDBEXPORTER_MONGODB_URI`:
 

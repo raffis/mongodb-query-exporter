@@ -36,6 +36,11 @@ func (conf *Config) GetBindAddr() string {
 	return conf.Bind
 }
 
+// Get metrics path
+func (conf *Config) GetMetricsPath() string {
+	return "/metrics"
+}
+
 // Build a collector from a configuration v1.0 format and return an Exprter with that collector.
 // Note the v1.0 config does not support multiple collectors, you may instead use the v2.0 format.
 func (conf *Config) Build() (*collector.Collector, error) {

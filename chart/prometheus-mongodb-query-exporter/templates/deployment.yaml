@@ -56,6 +56,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
         - --bind={{ printf ":%s" .Values.port }}
+        - --path={{ .Values.metricsPath }}
         {{- if .Values.extraArgs }}
         {{- toYaml .Values.extraArgs | nindent 8 }}
         {{- end }}

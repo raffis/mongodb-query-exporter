@@ -29,6 +29,7 @@ populate the `podAnnotations` as below:
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "metrics"
+  prometheus.io/path: "/metrics"
 ```
 
 ## Configuration
