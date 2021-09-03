@@ -64,3 +64,17 @@ Determine configmap name, can either be the self-created of an existing one
 {{- end -}}
 {{- end -}}
 
+
+{{/*
+Common labels
+*/}}
+{{- define "prometheus-mongodb-query-exporter.labels" -}}{{- if .Values.chartLabels }}
+    app.kubernetes.io/name: {{ include "prometheus-mongodb-query-exporter.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "prometheus-mongodb-query-exporter.chart" . }}
+{{- end -}}
+{{- with .Values.labels }}
+    {{ . | toYaml }}
+{{- end -}}
+{{- end -}}

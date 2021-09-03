@@ -3,13 +3,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ template "prometheus-mongodb-query-exporter.fullname" . }}
+  {{- with ( include "prometheus-mongodb-query-exporter.labels" . ) }}
   labels:
-    app.kubernetes.io/name: {{ include "prometheus-mongodb-query-exporter.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    helm.sh/chart: {{ include "prometheus-mongodb-query-exporter.chart" . }}
+    {{- . }}
+  {{- end }}
+  {{- with .Values.annotations }}
   annotations:
-    {{- toYaml .Values.annotations | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
