@@ -124,6 +124,22 @@ func TestInitializeMetrics(t *testing.T) {
 			expected: ``,
 		},
 		metricTest{
+			name: "Unlabeled gauge no value found in result but OverrideEmpty is set with EmptyValue 0",
+			metric: &Metric{
+				Name:          "simple_gauge_value_not_found_overriden",
+				Type:          "gauge",
+				Help:          "overridden",
+				OverrideEmpty: true,
+				EmptyValue:    12,
+				Pipeline:      "[{\"$match\":{\"foo\":\"bar\"}}]",
+			},
+			expected: `
+				# HELP simple_gauge_value_not_found_overriden overridden
+				# TYPE simple_gauge_value_not_found_overriden gauge
+				simple_gauge_value_not_found_overriden 12
+			`,
+		},
+		metricTest{
 			name: "Unlabeled gauge value not of type float",
 			metric: &Metric{
 				Name:     "simple_gauge_value_not_float",
