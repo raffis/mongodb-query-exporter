@@ -3,19 +3,18 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ include "prometheus-mongodb-query-exporter.fullname" . }}
+  {{- $labels := merge ( include "prometheus-mongodb-query-exporter.labels" . | fromYaml) .Values.serviceMonitor.labels -}} 
+  {{- with $labels }}
   labels:
-    app.kubernetes.io/name: {{ include "prometheus-mongodb-query-exporter.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    helm.sh/chart: {{ include "prometheus-mongodb-query-exporter.chart" . }}
-    {{- range $key, $value := .Values.serviceMonitor.additionalLabels }}
-    {{ $key }}: {{ $value | quote }}
-    {{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- if .Values.serviceMonitor.namespace }}
   namespace: {{ .Values.serviceMonitor.namespace }}
   {{- end }}
-  annotations:
-    {{- toYaml .Values.annotations | nindent 4 }}
 spec:
   endpoints:
   - port: metrics

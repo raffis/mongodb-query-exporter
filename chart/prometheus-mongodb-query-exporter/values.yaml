@@ -1,5 +1,9 @@
 affinity: {}
 
+chartLabels: true
+
+labels: {}
+
 annotations: {}
 
 extraArgs:
@@ -9,7 +13,7 @@ fullnameOverride: ""
 image:
   pullPolicy: IfNotPresent
   repository: raffis/mongodb-query-exporter
-  tag: v1.0.0-beta7
+  tag:
 
 imagePullSecrets: []
 
@@ -155,7 +159,7 @@ serviceMonitor:
   interval: 30s
   scrapeTimeout: 10s
   namespace:
-  additionalLabels: {}
+  labels: {}
   targetLabels: []
   metricRelabelings: []
   sampleLimit: 0

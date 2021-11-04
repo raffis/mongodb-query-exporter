@@ -2,16 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "prometheus-mongodb-query-exporter.fullname" . }}
+  {{- $labels := merge ( include "prometheus-mongodb-query-exporter.labels" . | fromYaml) .Values.service.labels -}} 
+  {{- with $labels }}
   labels:
-    app.kubernetes.io/name: {{ include "prometheus-mongodb-query-exporter.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    helm.sh/chart: {{ include "prometheus-mongodb-query-exporter.chart" . }}
-{{- if .Values.service.labels }}
-{{ toYaml .Values.service.labels | indent 4 }}
-{{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.annotations }}
   annotations:
-    {{- toYaml .Values.service.annotations | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   ports:
     - port: {{ .Values.service.port }}
