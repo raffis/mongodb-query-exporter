@@ -19,6 +19,8 @@ metrics:
   servers: [main] #Can also be empty, if empty the metric will be used for every server defined
   help: 'Simple gauge metric'
   value: total
+  overrideEmpty: true # if an empty result set is returned..
+  emptyValue: 0       # create a metric with value 0
   labels: []
   mode: pull
   cache: 0

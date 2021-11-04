@@ -51,21 +51,23 @@ type Config struct {
 // A metric defines what metric should be generated from what MongoDB aggregation.
 // The pipeline configures (as JSON) the aggreation query
 type Metric struct {
-	Name        string
-	Type        string
-	Servers     []string
-	Help        string
-	Value       string
-	Cache       int64
-	ConstLabels prometheus.Labels
-	Mode        string
-	Labels      []string
-	Database    string
-	Collection  string
-	Pipeline    string
-	desc        *prometheus.Desc
-	pipeline    bson.A
-	validUntil  time.Time
+	Name          string
+	Type          string
+	Servers       []string
+	Help          string
+	Value         string
+	OverrideEmpty bool
+	EmptyValue    int64
+	Cache         int64
+	ConstLabels   prometheus.Labels
+	Mode          string
+	Labels        []string
+	Database      string
+	Collection    string
+	Pipeline      string
+	desc          *prometheus.Desc
+	pipeline      bson.A
+	validUntil    time.Time
 }
 
 var (
@@ -358,10 +360,10 @@ func (c *Collector) generateMetrics(metric *Metric, srv *server, ch chan<- prome
 
 	var multierr *multierror.Error
 	var i int
+	var result = make(AggregationResult)
 
 	for cursor.Next(ctx) {
 		i++
-		var result AggregationResult
 
 		err := cursor.Decode(&result)
 		c.logger.Debugf("found record %s from metric %s", result, metric.Name)
@@ -383,7 +385,23 @@ func (c *Collector) generateMetrics(metric *Metric, srv *server, ch chan<- prome
 	}
 
 	if i == 0 {
-		return fmt.Errorf("metric %s aggregation returned an emtpy result set", metric.Name)
+		if ! metric.OverrideEmpty {
+			return fmt.Errorf("metric %s aggregation returned an empty result set", metric.Name)
+		}
+
+		c.logger.Debugf("OverrideEmpty option is set for metric %s, overriding value with %d", metric.Name, metric.EmptyValue)
+
+		result[metric.Value] = int64(metric.EmptyValue)
+		for _, label := range metric.Labels {
+			result[label] = ""
+		}
+		m, err := createMetric(metric, result)
+		if err != nil {
+			return err
+		}
+
+		c.updateCache(metric, srv, m)
+		ch <- m
 	}
 
 	return multierr.ErrorOrNil()
