@@ -1,0 +1,101 @@
+name: release
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'image tag prefix'
+        required: true
+
+permissions:
+  contents: write # needed to write releases
+  id-token: write # needed for keyless signing
+  packages: write # needed for ghcr access
+
+env:
+  APP: ${{ github.event.repository.name }}
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - uses: actions/setup-go@v2.1.3
+        with:
+          go-version: '1.15'
+      - name: Prepare
+        id: prep
+        run: |
+          VERSION="${{ github.event.inputs.tag }}-${GITHUB_SHA::8}"
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF/refs\/tags\//}
+          fi
+          echo ::set-output name=BUILD_DATE::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo ::set-output name=VERSION::${VERSION}
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v1
+        with:
+          platforms: all
+      - name: Setup Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          buildkitd-flags: "--debug"
+      - name: Publish to DockerHub
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: raffis/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate images meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: |
+            ghcr.io/raffis/${{ env.APP }}
+            raffis/${{ env.APP }}
+          tags: |
+            type=raw,value=${{ steps.prep.outputs.VERSION }}
+      - name: Publish multi-arch container image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          builder: ${{ steps.buildx.outputs.name }}
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm/v7,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: Check images
+        run: |
+          docker buildx imagetools inspect ghcr.io/raffis/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
+          docker pull ghcr.io/doodlescheduling/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
+          docker buildx imagetools inspect raffis/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
+          docker pull raffis/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
+      - name: Generate release manifests
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          mkdir -p config/release
+          kustomize build ./config/crd > ./config/release/${{ env.APP }}.crds.yaml
+          kustomize build ./config/manager > ./config/release/${{ env.APP }}.deployment.yaml
+          echo '[CHANGELOG](https://github.com/raffis/${{ env.APP }}/blob/master/CHANGELOG.md)' > ./config/release/notes.md
+      - uses: anchore/sbom-action/download-syft@v0
+      - name: Create release and SBOM
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          version: latest
+          args: release --release-notes=config/release/notes.md --rm-dist --skip-validate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

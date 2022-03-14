@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-query-exporter
+spec:
+  selector:
+    matchLabels:
+      app: mongodb-query-exporter
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mongodb-query-exporter
+    spec:
+      containers:
+      - image: ghcr.io/raffis/mongodb-query-exporter:latest
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+        name: exporter
+        ports:
+          - containerPort: 9557
+            name: healthz
+            protocol: TCP
+          - containerPort: 9556
+            name: metrics
+            protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: healthz
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: healthz
+        resources:
+          limits:
+            cpu: 100m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+      terminationGracePeriodSeconds: 10

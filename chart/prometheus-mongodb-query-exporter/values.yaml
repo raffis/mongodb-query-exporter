@@ -137,6 +137,7 @@ securityContext:
   runAsUser: 10000
 
 service:
+  enabled: false
   labels: {}
   annotations: {}
   port: 9412
@@ -151,11 +152,22 @@ serviceAccount:
 # Creates a PodSecurityPolicy and the role/rolebinding
 # allowing the serviceaccount to use it
 podSecurityPolicy:
-  enabled: true
+  enabled: false
 
 # Prometheus operator ServiceMonitor
 serviceMonitor:
-  enabled: true
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  namespace:
+  labels: {}
+  targetLabels: []
+  metricRelabelings: []
+  sampleLimit: 0
+
+# Prometheus operator PodMonitor
+podMonitor:
+  enabled: false
   interval: 30s
   scrapeTimeout: 10s
   namespace:

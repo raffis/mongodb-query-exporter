@@ -20,8 +20,6 @@ integrations    := $(shell $(GO) list ./... | grep cmd)
 
 PREFIX              ?= $(shell pwd)
 BIN_DIR             ?= $(shell pwd)
-DOCKER_IMAGE_NAME   ?= raffis/mongodb-query-exporter
-DOCKER_IMAGE_TAG    ?= latest
 
 
 all: deps vet format build test
@@ -59,10 +57,6 @@ build: promu
 tarball: promu
 	@echo ">> building release tarball"
 	@$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
-
-docker:
-	@echo ">> building docker image"
-	@docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
 
 promu:
 	@GOOS=$(shell uname -s | tr A-Z a-z) \

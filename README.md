@@ -13,14 +13,9 @@ MongoDB aggregation query exporter for [Prometheus](https://prometheus.io).
 * Support for gauge metrics
 * Pull and Push (Push is only supported for MongoDB >= 3.6)
 * Supports multiple MongoDB servers
-* Public API for Golang
 * Metric caching support
 
 Note that this is not designed to be a replacement for the [MongoDB exporter](https://github.com/percona/mongodb_exporter) to instrument MongoDB internals. This application exports custom MongoDB metrics in the prometheus format based on the queries (aggregations) you want.
-
-## Beta notice
-
-This software is currently beta and the API/configuration may break without notice until a stable version is released.
 
 ## Installation
 
@@ -93,7 +88,7 @@ Note if you have multiple MongoDB servers you can inject an env variable for eac
 2. `MDBEXPORTER_SERVER_1_MONGODB_URI=mongodb://srv2:27017`
 3. ...
 
-### Format v2.0
+### Example
 
 The config format v2.0 is not supported in any version before `v1.0.0-beta5`. Please use v1.0 or upgrade to the latest version otherwise.
 Starting with v1.0.0-beta5 the v2.0 format is the preferred version.
@@ -168,71 +163,6 @@ metrics:
 
 See more examples in the `/example` folder.
 
-### Format v1.0
-
-The config version v1.0 has some disadvantages over v2.0 including no support for multiple MongoDB servers.
-
-Example:
-```yaml
-version: 1.0
-bind: 0.0.0.0:9412
-logLevel: info
-mongodb:
-  uri: mongodb://localhost:27017
-  connectionTimeout: 3
-  maxConnection: 3
-  defaultInterval: 5
-metrics:
-- name: myapp_example_simplevalue_total
-  type: gauge
-  help: 'Simple gauge metric'
-  value: total
-  labels: []
-  mode: pull
-  interval: 10
-  database: mydb
-  collection: objects  
-  pipeline: |
-    [
-      {"$count":"total"}
-    ]  
-- name: myapp_example_processes_total
-  type: gauge
-  help: 'The total number of processes in a job queue'
-  value: total
-  mode: push
-  labels: [type,status]
-  constLabels:
-    app: foo
-  database: mydb
-  collection: queue
-  pipeline: |
-    [
-      {"$group": {
-        "_id":{"status":"$status","name":"$class"},
-        "total":{"$sum":1}
-      }},
-      {"$project":{
-        "_id":0,
-        "type":"$_id.name",
-        "total":"$total",
-        "status": {
-          "$switch": {
-              "branches": [
-                 { "case": { "$eq": ["$_id.status", 0] }, "then": "waiting" },
-                 { "case": { "$eq": ["$_id.status", 1] }, "then": "postponed" },
-                 { "case": { "$eq": ["$_id.status", 2] }, "then": "processing" },
-                 { "case": { "$eq": ["$_id.status", 3] }, "then": "done" },
-                 { "case": { "$eq": ["$_id.status", 4] }, "then": "failed" },
-                 { "case": { "$eq": ["$_id.status", 5] }, "then": "canceled" },
-                 { "case": { "$eq": ["$_id.status", 6] }, "then": "timeout" }
-              ],
-              "default": "unknown"
-          }}
-      }}
-    ]
-```
-
 ## Cache & Push
 Prometheus is designed to scrape metrics. During each scrape the mongodb-query-exporter will evaluate all configured metrics.
 If you have expensive queries there is an option to cache the aggregation result by setting a cache ttl in secconds.
@@ -283,10 +213,6 @@ metrics:
 ## Debug
 The mongodb-query-exporters also publishes a counter metric called `mongodb_query_exporter_query_total` which counts query results for each configured metric.
 Furthermore you might increase the log level to get more insight.
-
-## Go API
-Instead using the mongodb-query-exporter you may use the API to integrate the exporter within your go project.
-Please check out the [go package reference](https://pkg.go.dev/badge/github.com/raffis/mongodb-query-exporter?tab=subdirectories).
 
 ## Used by
 * The balloon helm chart implements the mongodb-query-exporter to expose general stats from the MongoDB like the number of total nodes or files stored internally or externally.

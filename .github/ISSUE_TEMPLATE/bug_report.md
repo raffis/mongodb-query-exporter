@@ -19,7 +19,7 @@ A clear and concise description of what you expected to happen.
 #### Environment
  - mongodb-query-exporter version: [e.g. v1.0.0]
  - prometheus version: [e.g. v1.0.0]
- - MongoDB version: [e.g. v3.4.18]
+ - MongoDB version: [e.g. v5.0.0]
  - Deployed as: [e.g. docker,kubernetes,binary]
 
 #### Additional context

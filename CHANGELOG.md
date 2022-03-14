@@ -1,3 +1,14 @@
+# 1.0.0
+**Date**: 2022-01-24
+
+Out of beta!
+
+## Packaging
+* Add support for podMonitor in helm chart
+* kustomize base
+* Add e2e tests and improved pipeline
+
+
 # 1.0.0-beta7
 **Date**: Mon Jan 18 21:34:20 CET 2020
 
