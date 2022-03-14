@@ -153,7 +153,7 @@ func TestMetricsConfigv2(t *testing.T) {
 
 	os.Setenv("MDBEXPORTER_SERVER_0_MONGODB_URI", mongodbUri)
 	args := []string{
-		"-f", "../example/configv2.yaml",
+		"-f", "../example/config.yaml",
 	}
 
 	b := bytes.NewBufferString("")
