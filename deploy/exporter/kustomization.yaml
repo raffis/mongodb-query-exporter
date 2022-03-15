@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - deployment.yaml
+- namespace.yaml
 images:
 - name: raffis/mongodb-query-exporter:latest
   newTag: v1.0.0
