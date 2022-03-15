@@ -42,7 +42,7 @@ jobs:
       - name: Send go coverage report
         uses: shogo82148/actions-goveralls@v1
         with:
-          path-to-profile: coverage.out        
+          path-to-profile: coverage.out
       - name: Check if working tree is dirty
         run: |
           if [[ $(git diff --stat) != '' ]]; then
@@ -50,12 +50,19 @@ jobs:
             echo 'run make test and commit changes'
             exit 1
           fi
-      - name: Build container image1
-        run: make docker BUILD_PLATFORMS=linux/amd64 BUILD_ARGS=--load
+      - name: Build container image
+        run: |
+          make docker-build IMG=raffis/mongodb-query-exporter:latest BUILD_PLATFORMS=linux/amd64 \
+            BUILD_ARGS="--cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Load test image
         run: kind load docker-image raffis/mongodb-query-exporter:latest
       - name: Deploy exporter
-        run: make deploy IMG=raffis/mongodb-query-exporter:latest
+        run: make deploy-test IMG=raffis/mongodb-query-exporter:latest
       - name: Setup MongoDB
         env:
           MONGODB_VER: ${{ '10.29.2' }}

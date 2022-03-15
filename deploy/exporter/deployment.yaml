@@ -13,27 +13,24 @@ spec:
         app: mongodb-query-exporter
     spec:
       containers:
-      - image: ghcr.io/raffis/mongodb-query-exporter:latest
+      - image: raffis/mongodb-query-exporter:latest
         imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
         name: exporter
         ports:
-          - containerPort: 9557
-            name: healthz
-            protocol: TCP
-          - containerPort: 9556
+          - containerPort: 9412
             name: metrics
             protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
-            port: healthz
+            port: metrics
         livenessProbe:
           httpGet:
             path: /healthz
-            port: healthz
+            port: metrics
         resources:
           limits:
             cpu: 100m

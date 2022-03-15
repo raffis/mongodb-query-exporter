@@ -13,7 +13,8 @@
 
 GO     := go
 GOPATH := $(firstword $(subst :, ,$(shell $(GO) env GOPATH)))
-PROMU  := $(GOPATH)/bin/promu
+KUSTOMIZE := kustomize
+IMG := raffis/mongodb-query-exporter:latest
 pkgs    := $(shell $(GO) list ./... | grep -v /vendor/)
 units    := $(shell $(GO) list ./... | grep -v /vendor/ | grep -v cmd)
 integrations    := $(shell $(GO) list ./... | grep cmd)
@@ -58,10 +59,34 @@ tarball: promu
 	@echo ">> building release tarball"
 	@$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
 
-promu:
-	@GOOS=$(shell uname -s | tr A-Z a-z) \
-		GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
-		$(GO) get -u github.com/prometheus/promu
+.PHONY: run
+run: manifests generate fmt vet
+	go run ./main.go
 
+.PHONY: docker-build
+docker-build: test ## Build docker image with the manager.
+	docker build -t ${IMG} .
 
-.PHONY: all style format build test vet tarball docker promu
+.PHONY: docker-push
+docker-push: ## Push docker image with the manager.
+	docker push ${IMG}
+
+.PHONY: deploy
+deploy:
+	cd deploy/exporter && $(KUSTOMIZE) edit set image exporter=${IMG}
+	$(KUSTOMIZE) build deploy/exporter | kubectl apply -f -
+
+.PHONY: undeploy
+undeploy: ## Undeploy exporter from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+.PHONY: deploy-test
+deploy:
+	cd deploy/test && $(KUSTOMIZE) edit set image exporter=${IMG}
+	$(KUSTOMIZE) build deploy/test | kubectl apply -f -
+
+.PHONY: undeploy-test
+undeploy: ## Undeploy exporter from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/test | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+.PHONY: all style format build test vet tarball
