@@ -51,11 +51,11 @@ vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
 
-build: promu
+build:
 	@echo ">> building binaries"
 	@$(PROMU) build --prefix $(PREFIX)
 
-tarball: promu
+tarball:
 	@echo ">> building release tarball"
 	@$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
 
