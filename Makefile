@@ -53,7 +53,7 @@ vet:
 
 build:
 	@echo ">> building binaries"
-	go build -o exporter main.go
+	go build -o mongodb_query_exporter main.go
 
 .PHONY: run
 run: manifests generate fmt vet
