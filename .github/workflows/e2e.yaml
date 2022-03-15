@@ -70,7 +70,6 @@ jobs:
           --namespace mongodb \
           --set auth.rootPassword=password \
           --set persistence.enabled=false
-          kubectl -n mongodb-system apply -f ./config/testdata/mongodb/root-secret.yaml
       - name: Run tests
         run: |
           kubectl -n mongodb-system port-forward svc/mongodb-query-exporter 9412:9412 &>/dev/null &
