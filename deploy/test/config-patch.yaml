@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mongodb-query-exporter
+  namespace: mongodb-system
 spec:
   template:
     spec:
@@ -9,7 +10,7 @@ spec:
       - name: exporter
         volumeMounts:
         - name: config
-          mountPath: /etc/mongodb_query_exporter/config.yaml
+          mountPath: /etc/mongodb-query-exporter/config.yaml
           subPath: config.yaml
       volumes:
       - name: config
