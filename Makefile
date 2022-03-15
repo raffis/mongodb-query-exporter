@@ -77,12 +77,12 @@ undeploy: ## Undeploy exporter from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-test
-deploy:
+deploy-test:
 	cd deploy/test && $(KUSTOMIZE) edit set image exporter=${IMG}
 	$(KUSTOMIZE) build deploy/test | kubectl apply -f -
 
 .PHONY: undeploy-test
-undeploy: ## Undeploy exporter from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+undeploy-test: ## Undeploy exporter from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/test | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: all style format build test vet
