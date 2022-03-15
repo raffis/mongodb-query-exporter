@@ -53,11 +53,7 @@ vet:
 
 build:
 	@echo ">> building binaries"
-	@$(PROMU) build --prefix $(PREFIX)
-
-tarball:
-	@echo ">> building release tarball"
-	@$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
+	go build -o exporter main.go
 
 .PHONY: run
 run: manifests generate fmt vet
@@ -89,4 +85,4 @@ deploy:
 undeploy: ## Undeploy exporter from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/test | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
-.PHONY: all style format build test vet tarball
+.PHONY: all style format build test vet
