@@ -69,7 +69,7 @@ docker-push: ## Push docker image with the manager.
 
 .PHONY: deploy
 deploy:
-	cd deploy/exporter && $(KUSTOMIZE) edit set image exporter=${IMG}
+	cd deploy/exporter && $(KUSTOMIZE) edit set image raffis/mongodb-query-exporter=${IMG}
 	$(KUSTOMIZE) build deploy/exporter | kubectl apply -f -
 
 .PHONY: undeploy
@@ -78,7 +78,7 @@ undeploy: ## Undeploy exporter from the K8s cluster specified in ~/.kube/config.
 
 .PHONY: deploy-test
 deploy-test:
-	cd deploy/test && $(KUSTOMIZE) edit set image exporter=${IMG}
+	cd deploy/test && $(KUSTOMIZE) edit set image raffis/mongodb-query-exporter=${IMG}
 	$(KUSTOMIZE) build deploy/test | kubectl apply -f -
 
 .PHONY: undeploy-test

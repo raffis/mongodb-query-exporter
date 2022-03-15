@@ -52,13 +52,13 @@ jobs:
           fi
       - name: Build container image
         run: |
-          make docker-build IMG=raffis/mongodb-query-exporter:latest BUILD_PLATFORMS=linux/amd64 \
+          make docker-build IMG=test/mongodb-query-exporter:latest BUILD_PLATFORMS=linux/amd64 \
             BUILD_ARGS="--cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
       - name: Load test image
-        run: kind load docker-image raffis/mongodb-query-exporter:latest
+        run: kind load docker-image test/mongodb-query-exporter:latest
       - name: Deploy exporter
-        run: make deploy-test IMG=raffis/mongodb-query-exporter:latest
+        run: make deploy-test IMG=test/mongodb-query-exporter:latest
       - name: Setup MongoDB
         env:
           MONGODB_VER: ${{ '10.29.2' }}
@@ -72,7 +72,7 @@ jobs:
           --set persistence.enabled=false
       - name: Run tests
         run: |
-          kubectl -n mongodb-system port-forward svc/mongodb-query-exporter 9412:9412 &>/dev/null &
+          kubectl -n mongodb-system port-forward deployment/mongodb-query-exporter 9412:9412 &>/dev/null &
           sleep 2
           curl -v --fail http://localhost:9412/metrics
       - name: Logs
