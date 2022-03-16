@@ -1,16 +1,33 @@
 # 1.0.0
-**Date**: 2022-01-24
+**Date**: 2022-03-16
 
 Out of beta!
+
+## Features
+* Support for env subsitution in uri
+
+## Changes
+* update: mongodb driver 1.8.4 #38 @fredmaggiowski
 
 ## Packaging
 * Add support for podMonitor in helm chart
 * kustomize base
 * Add e2e tests and improved pipeline
+* Add cross mongodb e2e tests
+
+
+# 1.0.0-beta8
+**Date**: 2021-11-04
+
+## Features
+* Add an option to override value for empty result set #32 @guillaumelecerf
+
+## Changes
+* Helper functions for shared chart labels #33
 
 
 # 1.0.0-beta7
-**Date**: Mon Jan 18 21:34:20 CET 2020
+**Date**: 2021-01-18
 
 ## Bugfixes
 * Fixes missing Path in ServiceMonitor helm chart
@@ -20,7 +37,7 @@ Out of beta!
 
 
 # 1.0.0-beta6
-**Date**: Thu Nov 12 22:35:21 CET 2020
+**Date**: 2020-11-12
 
 ## Bugfixes
 * Protect cache from concurrent access
@@ -30,7 +47,7 @@ Out of beta!
 
 
 # 1.0.0-beta5
-**Date**: Wed Nov 11 22:33:21 CET 2020
+**Date**: 2020-11-11
 
 ## Features
 * Support for multiple MongoDB servers
@@ -52,7 +69,7 @@ Out of beta!
 
 
 # 1.0.0-beta4
-**Date**: Tue Mar 24 15:57:21 CET 2020
+**Date**: 2020-03-24
 
 ## Bugfixes
 * Do not abort if lookup config in home fails
@@ -68,7 +85,7 @@ Out of beta!
 
 
 # 1.0.0-beta3
-**Date**: Fri Mar 13 16:33:22 CET 2020
+**Date**: 2020-03-13
 
 ## Bugfixes
 * Metrics never updated within startPullListeners? #1

@@ -9,10 +9,9 @@ on:
 
 jobs:
   build:
-    e2e:
-      strategy:
-        matrix:
-          mongodb: [4.4, 5.0]
+    strategy:
+      matrix:
+        mongodb: [4.4, 5.0]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
