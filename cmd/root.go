@@ -99,8 +99,6 @@ func Execute() error {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	//deprecated, use -f
-	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "[Deprecated, use -f/--file] config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", "mongodb://localhost:27017", "[Deprecated, use the config file or MDBEXPORTER_SERVER_0_MONGODB_URI env] MongoDB URI (default is mongodb://localhost:27017)")
 
 	rootCmd.PersistentFlags().StringVarP(&configPath, "file", "f", "", "config file (default is $HOME/.mongodb_query_exporter/config.yaml)")

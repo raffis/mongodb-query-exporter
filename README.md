@@ -53,11 +53,24 @@ db.getSiblingDB("admin").createUser({
 export MDBEXPORTER_MONGODB_URI=mongodb://mongodb_query_exporter:secret@localhost:27017
 ```
 
+Note: The URI is substituted using env variables `${MY_ENV}`, given that you may also pass credentials from other env variables. See the example bellow.
+
 If you use [x.509 Certificates to Authenticate Clients](https://docs.mongodb.com/manual/tutorial/configure-x509-client-authentication/), pass in username and `authMechanism` via [connection options](https://docs.mongodb.com/manual/reference/connection-string/#connections-connection-options) to the MongoDB uri. Eg:
 
 ```
 mongodb://CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST=myState,C=myCountry@localhost:27017/?authMechanism=MONGODB-X509
 ```
+
+## Credentials from env variables
+You can pass in credentials from env variables.
+
+Given the following URI the exporter will look for the ENV variables called `MY_USERNAME` and `MY_PASSWORD` and automatically use them at the referenced position within the URI.
+```bash
+export MY_USERNAME=mongodb_query_exporter
+export MY_PASSWORD=secret
+export MDBEXPORTER_MONGODB_URI=mongodb://${MY_USERNAME}:${MY_PASSWORD}@localhost:27017
+```
+
 
 ## Access metrics
 The metrics are by default exposed at `/metrics`.

@@ -97,10 +97,11 @@ func (conf *Config) Build() (*collector.Collector, error) {
 			srv.URI = "mongodb://localhost:27017"
 		}
 
+		srv.URI = os.ExpandEnv(srv.URI)
 		opts := options.Client().ApplyURI(srv.URI)
 		l.Sugar().Infof("use mongodb hosts %#v", opts.Hosts)
-		var err error
 
+		var err error
 		name := srv.Name
 		if name == "" {
 			name = strings.Join(opts.Hosts, ",")

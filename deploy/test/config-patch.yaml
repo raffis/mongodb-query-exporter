@@ -8,6 +8,19 @@ spec:
     spec:
       containers:
       - name: exporter
+        env:
+        - name: MDBEXPORTER_MONGODB_URI
+          value: mongodb://${USERNAME}:${PASSWORD}@mongodb.mongodb:27017
+        - name: USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-credentials
+              key: mongodb-username
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-credentials
+              key: mongodb-root-password
         volumeMounts:
         - name: config
           mountPath: /etc/mongodb-query-exporter/config.yaml

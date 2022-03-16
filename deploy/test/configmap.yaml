@@ -6,34 +6,19 @@ metadata:
 data:
   config.yaml: |
     version: 2.0
-    bind: 0.0.0.0:9412
-    metricsPath: /metrics
-    log:
-      encoding: json
-      level: info
-      development: false
-      disableCaller: false
-    global:
-      queryTimeout: 10
-      maxConnection: 3
-      defaultCache: 5
-    servers:
-    - name: main
-      uri: mongodb://localhost:27017
     metrics:
-    - name: myapp_example_simplevalue_total
-      type: gauge #Can also be empty, the default is gauge
-      servers: [main] #Can also be empty, if empty the metric will be used for every server defined
-      help: 'Simple gauge metric'
+    - name: total_mongodb_users
+      type: gauge
+      help: 'Total count of mongodb users'
       value: total
-      overrideEmpty: true # if an empty result set is returned..
-      emptyValue: 0       # create a metric with value 0
+      overrideEmpty: true
+      emptyValue: 0
       labels: []
       mode: pull
       cache: 0
       constLabels: []
-      database: mydb
-      collection: objects
+      database: system
+      collection: users
       pipeline: |
         [
           {"$count":"total"}
