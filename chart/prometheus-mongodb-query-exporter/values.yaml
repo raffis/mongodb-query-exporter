@@ -24,11 +24,11 @@ livenessProbe:
   initialDelaySeconds: 10
 
 
-#List of MongoDB servers (Injected as secret env)
+# List of MongoDB servers (Injected as secret env)
 mongodb: []
-#- [mongodb[+srv]://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
+# - [mongodb[+srv]://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
 
-#The MongoDB query exporter config (required if exstingConfig.name is not set)
+# The MongoDB query exporter config (required if exstingConfig.name is not set)
 config: |
 #  version: 2.0
 #  bind: 0.0.0.0:9412
@@ -82,7 +82,7 @@ secretMounts: []
 #    secretName: mongodb-certs
 #    path: /ssl
 
-#Add additional containers (sidecars)
+# Add additional containers (sidecars)
 extraContainers:
 
 podAnnotations: {}
