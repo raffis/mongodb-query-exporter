@@ -80,13 +80,13 @@ curl localhost:9412/metrics
 
 ## Configuration
 
-The exporter is looking for a configuration in `~/config.yaml` and `/etc/mongodb-query-exporter/config.yaml` or if set the path from the env `MDBEXPORTER_CONFIG`.
+The exporter is looking for a configuration in `~/.mongodb_query_exporter/config.yaml` and `/etc/mongodb_query_exporter/config.yaml` or if set the path from the env `MDBEXPORTER_CONFIG`.
 
 You may also use env variables to configure the exporter:
 
 | Env variable             | Description                              | Default |
 |--------------------------|------------------------------------------|---------|
-| MDBEXPORTER_CONFIG       | Custom path for the configuration        | `/etc/mongodb_query_exporter/config.yaml` |
+| MDBEXPORTER_CONFIG       | Custom path for the configuration        | `~/.mongodb_query_exporter/config.yaml` or `/etc/mongodb_query_exporter/config.yaml` |
 | MDBEXPORTER_MONGODB_URI  | The MongoDB connection URI               | `mongodb://localhost:27017`
 | MDBEXPORTER_MONGODB_QUERY_TIMEOUT | Timeout until a MongoDB operations gets aborted | `10` |
 | MDBEXPORTER_LOG_LEVEL    | Log level                                | `warning` |
