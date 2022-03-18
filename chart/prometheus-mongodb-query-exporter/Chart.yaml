@@ -3,7 +3,7 @@ appVersion: v1.0.0
 description: A Prometheus exporter for MongoDB custom aggregations
 home: https://github.com/raffis/mongodb-query-exporter
 maintainers:
-- name: Raffael Sahli
+- name: raffis
   email: raffael.sahli@gmail.com
 keywords:
 - exporter
