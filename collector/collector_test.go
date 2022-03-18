@@ -273,6 +273,42 @@ func TestInitializeMetrics(t *testing.T) {
 				simple_gauge_label{foo="bar"} 1
 			`,
 		},
+		aggregationTest{
+			name: "Export multiple metrics from the same aggregation",
+			aggregation: &Aggregation{
+				Metrics: []*Metric{
+					&Metric{
+						Name:   "simple_gauge_label",
+						Type:   "gauge",
+						Help:   "foobar",
+						Value:  "total",
+						Labels: []string{"foo"},
+					},
+					&Metric{
+						Name:        "simple_gauge_label_with_constant",
+						Type:        "gauge",
+						Help:        "bar",
+						Value:       "total",
+						Labels:      []string{"foo"},
+						ConstLabels: prometheus.Labels{"foobar": "foo"},
+					},
+				},
+				Pipeline: "[{\"$match\":{\"foo\":\"bar\"}}]",
+			},
+			docs: []interface{}{AggregationResult{
+				"total": float64(1),
+				"foo":   "bar",
+			}},
+			expected: `
+				# HELP simple_gauge_label foobar
+				# TYPE simple_gauge_label gauge
+				simple_gauge_label{foo="bar"} 1
+
+				# HELP simple_gauge_label_with_constant bar
+				# TYPE simple_gauge_label_with_constant gauge
+				simple_gauge_label_with_constant{foo="bar", foobar="foo"} 1
+			`,
+		},
 	}
 
 	for _, test := range tests {
