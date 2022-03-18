@@ -39,6 +39,18 @@ type Server struct {
 	URI  string
 }
 
+// Config defaults
+const (
+	DefaultServerName   = "localhost:27017"
+	DefaultMongoDBURI   = "mongodb://localhost:27017"
+	DefaultMetricsPath  = "/metrics"
+	DefaultBindAddr     = ":9412"
+	DefaultQUeryTimeout = 10
+	HealthzPath         = "/healthz"
+	DefaultLogEncoder   = "json"
+	DefaultLogLevel     = "warn"
+)
+
 // Get address where the http server should be bound to
 func (conf *Config) GetBindAddr() string {
 	return conf.Bind
@@ -52,26 +64,39 @@ func (conf *Config) GetMetricsPath() string {
 // Build collectors from a configuration v2.0 format and return a collection of
 // all configured collectors
 func (conf *Config) Build() (*collector.Collector, error) {
-	l, err := zap.New(conf.Log)
+	if conf.Log.Encoding == "" {
+		conf.Log.Encoding = DefaultLogEncoder
+	}
 
+	if conf.Log.Level == "" {
+		conf.Log.Level = DefaultLogLevel
+	}
+
+	l, err := zap.New(conf.Log)
 	if err != nil {
 		return nil, err
 	}
 
 	if conf.MetricsPath == "" {
-		conf.MetricsPath = "/metrics"
-	} else if conf.MetricsPath == "/healthz" {
-		return nil, fmt.Errorf("/healthz not allowed as metrics path")
+		conf.MetricsPath = DefaultMetricsPath
+	} else if conf.MetricsPath == HealthzPath {
+		return nil, fmt.Errorf("%s not allowed as metrics path", HealthzPath)
 	}
 
 	if conf.Bind == "" {
-		conf.Bind = ":9412"
+		conf.Bind = DefaultBindAddr
 	}
 
 	l.Sugar().Infof("will listen on %s", conf.Bind)
 
 	if conf.Global.QueryTimeout == 0 {
 		conf.Global.QueryTimeout = 10
+	}
+
+	if len(conf.Servers) == 0 {
+		conf.Servers = append(conf.Servers, &Server{
+			Name: DefaultServerName,
+		})
 	}
 
 	c := collector.New(
@@ -94,7 +119,7 @@ func (conf *Config) Build() (*collector.Collector, error) {
 		}
 
 		if srv.URI == "" {
-			srv.URI = "mongodb://localhost:27017"
+			srv.URI = DefaultMongoDBURI
 		}
 
 		srv.URI = os.ExpandEnv(srv.URI)
@@ -117,6 +142,10 @@ func (conf *Config) Build() (*collector.Collector, error) {
 		if err != nil {
 			return c, err
 		}
+	}
+
+	if len(conf.Metrics) == 0 {
+		l.Sugar().Warn("no metrics have been configured")
 	}
 
 	for _, metric := range conf.Metrics {

@@ -10,12 +10,7 @@ import (
 
 func TestBuild(t *testing.T) {
 	t.Run("Build collector", func(t *testing.T) {
-		var conf = &Config{
-			Log: zap.Config{
-				Encoding: "console",
-				Level:    "error",
-			},
-		}
+		var conf = &Config{}
 		_, err := conf.Build()
 
 		assert.NoError(t, err)
@@ -36,7 +31,7 @@ func TestBuild(t *testing.T) {
 		assert.Equal(t, conf.GetBindAddr(), ":2222", "Expected bind address to be equal")
 	})
 
-	t.Run("Server is registered", func(t *testing.T) {
+	t.Run("Server is registered with name taken from mongodb URI", func(t *testing.T) {
 		var conf = &Config{
 			Log: zap.Config{
 				Encoding: "console",
@@ -53,6 +48,18 @@ func TestBuild(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, c.GetServers([]string{"foo:27017,bar:27017"}), 1, "Expected to found one server named foo:27017,bar:27017")
+	})
+
+	t.Run("Default server localhost:27017 is applied if no servers are configured", func(t *testing.T) {
+		var conf = &Config{
+			Log: zap.Config{
+				Encoding: "console",
+				Level:    "error",
+			},
+		}
+		c, err := conf.Build()
+		assert.NoError(t, err)
+		assert.Len(t, c.GetServers([]string{"localhost:27017"}), 1, "Expected to found one server named foo:27017,bar:27017")
 	})
 
 	t.Run("Server name is changeable", func(t *testing.T) {

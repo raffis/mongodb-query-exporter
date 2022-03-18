@@ -4,10 +4,16 @@
 Out of beta!
 
 ## Features
-* Support for env subsitution in uri
+* Support for env substitution within mongodb uri
 
 ## Changes
 * update: mongodb driver 1.8.4 #38 @fredmaggiowski
+* Log a warning if no metrics are configured
+
+## Bugfixes
+* Exporter works now even without any servers configured in the config and falls back to the uri env or localhost
+* Fallback to default logger if an empty encoder and/or level is configured
+*
 
 ## Packaging
 * Add support for podMonitor in helm chart

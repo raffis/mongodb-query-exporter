@@ -73,8 +73,6 @@ type Metric struct {
 var (
 	//Only Gauge is a supported metric types
 	ErrInvalidType = errors.New("unknown metric type provided. Only gauge is supported")
-	//Only Gauge and Counter are supported metric types
-	ErrServerNotRegistered = errors.New("server needs to be registered")
 	//The value was not found in the aggregation result set
 	ErrValueNotFound = errors.New("value not found in result set")
 	//No cached metric available
@@ -88,6 +86,10 @@ const (
 	ModePull = "pull"
 	//Push mode (Uses changestream which is only supported with MongoDB >= 3.6)
 	ModePush = "push"
+	//Metric generated succesfully
+	ResultSuccess = "SUCCESS"
+	//Metric value could not been determined
+	ResultError = "ERROR"
 )
 
 // Create a new collector
@@ -158,7 +160,7 @@ func (c *Collector) RegisterMetric(metric *Metric) error {
 	metric.desc = desc
 
 	if len(metric.Servers) != 0 && len(metric.Servers) != len(c.GetServers(metric.Servers)) {
-		return ErrServerNotRegistered
+		return fmt.Errorf("metric %s bound to servers which have not been configured", metric.Name)
 	}
 
 	err := bson.UnmarshalExtJSON([]byte(metric.Pipeline), false, &metric.pipeline)
@@ -233,11 +235,11 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 
 				var result string
 				if err == nil {
-					result = "SUCCESS"
+					result = ResultSuccess
 				} else {
 					c.logger.Errorf("failed to generate metric : %s", err)
 
-					result = "ERROR"
+					result = ResultError
 				}
 
 				c.counter.With(prometheus.Labels{
@@ -257,7 +259,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 }
 
 func (c *Collector) updateCache(metric *Metric, srv *server, m prometheus.Metric) {
-	var ttl int64 = 0
+	var ttl int64
 
 	if (metric.Mode == ModePush && metric.Cache == 0) || metric.Cache == -1 {
 		c.logger.Debugf("cache metric %s until new push", metric.Name)
@@ -385,7 +387,7 @@ func (c *Collector) generateMetrics(metric *Metric, srv *server, ch chan<- prome
 	}
 
 	if i == 0 {
-		if ! metric.OverrideEmpty {
+		if !metric.OverrideEmpty {
 			return fmt.Errorf("metric %s aggregation returned an empty result set", metric.Name)
 		}
 

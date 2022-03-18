@@ -43,7 +43,7 @@ deps:
 	@echo ">> install dependencies"
 	@$(GO) mod download
 
-format:
+fmt:
 	@echo ">> formatting code"
 	@$(GO) fmt $(pkgs)
 
@@ -56,7 +56,7 @@ build:
 	go build -o mongodb_query_exporter main.go
 
 .PHONY: run
-run: manifests generate fmt vet
+run: fmt vet
 	go run ./main.go
 
 .PHONY: docker-build
@@ -85,4 +85,4 @@ deploy-test:
 undeploy-test: ## Undeploy exporter from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/test | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
-.PHONY: all style format build test vet
+.PHONY: all style fmt build test vet

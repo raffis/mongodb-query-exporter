@@ -16,7 +16,7 @@ metadata:
   namespace: {{ .Values.podMonitor.namespace }}
   {{- end }}
 spec:
-  endpoints:
+  podMetricsEndpoints:
   - port: metrics
     path: {{ .Values.metricsPath }}
     interval: {{ .Values.podMonitor.interval }}
