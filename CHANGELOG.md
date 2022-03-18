@@ -1,25 +1,29 @@
 # 1.0.0
-**Date**: 2022-03-16
+**Date**: 2022-03-18
 
 Out of beta!
+Notably the config format v3.0 was introduced in this release. See readme.md for more information.
 
 ## Features
 * Support for env substitution within mongodb uri
+* Support multiple metric values per aggregation pipeline #24
 
 ## Changes
 * update: mongodb driver 1.8.4 #38 @fredmaggiowski
 * Log a warning if no metrics are configured
+* Upgrade to go1.17
+* Add matrix mongodb version integration tests
+* Various code improvements
 
 ## Bugfixes
 * Exporter works now even without any servers configured in the config and falls back to the uri env or localhost
 * Fallback to default logger if an empty encoder and/or level is configured
-*
 
 ## Packaging
 * Add support for podMonitor in helm chart
-* kustomize base
+* kustomize base #29
 * Add e2e tests and improved pipeline
-* Add cross mongodb e2e tests
+* Add matrix mongodb version e2e tests
 
 
 # 1.0.0-beta8

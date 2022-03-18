@@ -11,6 +11,7 @@ import (
 	"github.com/raffis/mongodb-query-exporter/config"
 	v1 "github.com/raffis/mongodb-query-exporter/config/v1"
 	v2 "github.com/raffis/mongodb-query-exporter/config/v2"
+	v3 "github.com/raffis/mongodb-query-exporter/config/v3"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -39,9 +40,10 @@ var (
 				panic(err)
 			}
 
+			//reg := prometheus.NewRegistry()
+			prometheus.MustRegister(c)
 			promCollector = c
-			prometheus.MustRegister(promCollector)
-			promCollector.StartCacheInvalidator()
+			c.StartCacheInvalidator()
 			srv = buildHTTPServer(prometheus.DefaultGatherer, conf)
 			err = srv.ListenAndServe()
 
@@ -64,6 +66,9 @@ func buildCollector() (*collector.Collector, config.Config, error) {
 
 	var conf config.Config
 	switch configVersion {
+	case 3.0:
+		conf = &v3.Config{}
+
 	case 2.0:
 		conf = &v2.Config{}
 
@@ -114,13 +119,13 @@ func Execute() error {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", v2.DefaultMongoDBURI, "MongoDB URI (default is mongodb://localhost:27017). Use MDBEXPORTER_SERVER_%d_MONGODB_URI envs if you target multiple server")
+	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", v3.DefaultMongoDBURI, "MongoDB URI (default is mongodb://localhost:27017). Use MDBEXPORTER_SERVER_%d_MONGODB_URI envs if you target multiple server")
 	rootCmd.PersistentFlags().StringVarP(&configPath, "file", "f", "", "config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", v2.DefaultLogLevel, "Define the log level (default is warning) [debug,info,warn,error]")
-	rootCmd.PersistentFlags().StringVarP(&logEncoding, "log-encoding", "e", v2.DefaultLogEncoder, "Define the log format (default is json) [json,console]")
-	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", v2.DefaultBindAddr, "Address to bind http server (default is :9412)")
-	rootCmd.PersistentFlags().StringVarP(&metricsPath, "path", "p", v2.DefaultMetricsPath, "Metric path (default is /metrics)")
-	rootCmd.PersistentFlags().IntVarP(&queryTimeout, "query-timeout", "t", v2.DefaultQUeryTimeout, "Timeout for MongoDB queries")
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", v3.DefaultLogLevel, "Define the log level (default is warning) [debug,info,warn,error]")
+	rootCmd.PersistentFlags().StringVarP(&logEncoding, "log-encoding", "e", v3.DefaultLogEncoder, "Define the log format (default is json) [json,console]")
+	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", v3.DefaultBindAddr, "Address to bind http server (default is :9412)")
+	rootCmd.PersistentFlags().StringVarP(&metricsPath, "path", "p", v3.DefaultMetricsPath, "Metric path (default is /metrics)")
+	rootCmd.PersistentFlags().IntVarP(&queryTimeout, "query-timeout", "t", v3.DefaultQUeryTimeout, "Timeout for MongoDB queries")
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 	viper.BindPFlag("log.encoding", rootCmd.PersistentFlags().Lookup("log-encoding"))
 	viper.BindPFlag("bind", rootCmd.PersistentFlags().Lookup("bind"))
@@ -156,7 +161,7 @@ func initConfig() {
 		// Search config in home directory with name ".mongodb_query_exporter" (without extension).
 		viper.AddConfigPath(usr.HomeDir + "/.mongodb_query_exporter")
 		//config file name without extension
-		viper.SetConfigName("config")
+		//	viper.SetConfigName("config")
 	}
 
 	if err := viper.ReadInConfig(); err != nil {

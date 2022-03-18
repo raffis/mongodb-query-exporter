@@ -71,7 +71,6 @@ export MY_PASSWORD=secret
 export MDBEXPORTER_MONGODB_URI=mongodb://${MY_USERNAME}:${MY_PASSWORD}@localhost:27017
 ```
 
-
 ## Access metrics
 The metrics are by default exposed at `/metrics`.
 
@@ -85,15 +84,15 @@ The exporter is looking for a configuration in `~/config.yaml` and `/etc/mongodb
 
 You may also use env variables to configure the exporter:
 
-| Env variable             | Description                              |
-|--------------------------|------------------------------------------|
-| MDBEXPORTER_CONFIG       | Custom path for the configuration        |
-| MDBEXPORTER_MONGODB_URI  | The MongoDB connection URI               |
-| MDBEXPORTER_MONGODB_QUERY_TIMEOUT | Timeout until a MongoDB operations gets aborted |
-| MDBEXPORTER_LOG_LEVEL    | Log level                                |
-| MDBEXPORTER_LOG_ENCODING | Log format                               |
-| MDBEXPORTER_BIND         | Bind address for the HTTP server         |
-| MDBEXPORTER_METRICSPATH  | Change the metrics path (/metrics)       |
+| Env variable             | Description                              | Default |
+|--------------------------|------------------------------------------|---------|
+| MDBEXPORTER_CONFIG       | Custom path for the configuration        | `/etc/mongodb_query_exporter/config.yaml` |
+| MDBEXPORTER_MONGODB_URI  | The MongoDB connection URI               | `mongodb://localhost:27017`
+| MDBEXPORTER_MONGODB_QUERY_TIMEOUT | Timeout until a MongoDB operations gets aborted | `10` |
+| MDBEXPORTER_LOG_LEVEL    | Log level                                | `warning` |
+| MDBEXPORTER_LOG_ENCODING | Log format                               | `json` |
+| MDBEXPORTER_BIND         | Bind address for the HTTP server         | `:9412` |
+| MDBEXPORTER_METRICSPATH  | Metrics endpoint                         | `/metrics` |
 
 Note if you have multiple MongoDB servers you can inject an env variable for each instead using `MDBEXPORTER_MONGODB_URI`:
 
@@ -101,14 +100,14 @@ Note if you have multiple MongoDB servers you can inject an env variable for eac
 2. `MDBEXPORTER_SERVER_1_MONGODB_URI=mongodb://srv2:27017`
 3. ...
 
-### Example
+### Configure your metrics
 
-The config format v2.0 is not supported in any version before `v1.0.0-beta5`. Please use v1.0 or upgrade to the latest version otherwise.
-Starting with v1.0.0-beta5 the v2.0 format is the preferred version.
+Since the v1.0.0 release you should use the config version v3.0 to profit from the latest features.
+See the configuration version matrix bellow.
 
 Example:
 ```yaml
-version: 2.0
+version: 3.0
 bind: 0.0.0.0:9412
 log:
   encoding: json
@@ -122,31 +121,35 @@ global:
 servers:
 - name: main
   uri: mongodb://localhost:27017
-metrics:
-- name: myapp_example_simplevalue_total
-  type: gauge #Can also be empty, the default is gauge
-  servers: [main] #Can also be empty, if empty the metric will be used for every server defined
-  help: 'Simple gauge metric'
-  value: total
-  labels: []
-  mode: pull
-  cache: 0
-  database: mydb
+aggregations:
+- database: mydb
   collection: objects
+  servers: [main] #Can also be empty, if empty the metric will be used for every server defined
+  metrics:
+  - name: myapp_example_simplevalue_total
+    type: gauge #Can also be empty, the default is gauge
+    help: 'Simple gauge metric'
+    value: total
+    overrideEmpty: true # if an empty result set is returned..
+    emptyValue: 0       # create a metric with value 0
+    labels: []
+    constLabels: []
+  cache: 0
+  mode: pull
   pipeline: |
     [
       {"$count":"total"}
     ]
-- name: myapp_example_processes_total
-  type: gauge
-  help: 'The total number of processes in a job queue'
-  value: total
-  mode: push
-  labels: [type,status]
-  constLabels:
-    app: foo
-  database: mydb
+- database: mydb
   collection: queue
+  metrics:
+  - name: myapp_example_processes_total
+    type: gauge
+    help: 'The total number of processes in a job queue'
+    value: total
+    labels: [type,status]
+    constLabels: []
+  mode: pull
   pipeline: |
     [
       {"$group": {
@@ -172,27 +175,72 @@ metrics:
           }}
       }}
     ]
+- database: mydb
+  collection: events
+  metrics:
+  - name: myapp_events_total
+    type: gauge
+    help: 'The total number of events (created 1h ago or newer)'
+    value: count
+    labels: [type]
+    constLabels: []
+  mode: pull
+  # Note $$NOW is only supported in MongoDB >= 4.2
+  pipeline: |
+    [
+      { "$sort": { "created": -1 }},
+      {"$limit": 100000},
+      {"$match":{
+        "$expr": {
+          "$gte": [
+            "$created",
+            {
+              "$subtract": ["$$NOW", 3600000]
+            }
+          ]
+        }
+      }},
+      {"$group": {
+        "_id":{"type":"$type"},
+        "count":{"$sum":1}
+      }},
+      {"$project":{
+        "_id":0,
+        "type":"$_id.type",
+        "count":"$count"
+      }}
+    ]
 ```
 
 See more examples in the `/example` folder.
 
+## Supported config versions
+
+| Config version           | Supported since   |
+|--------------------------|-------------------|
+| `v3.0`                   | v1.0.0            |
+| `v2.0`                   | v1.0.0-beta5      |
+| `v1.0`                   | v1.0.0-beta1      |
+
+
 ## Cache & Push
 Prometheus is designed to scrape metrics. During each scrape the mongodb-query-exporter will evaluate all configured metrics.
-If you have expensive queries there is an option to cache the aggregation result by setting a cache ttl in secconds.
+If you have expensive queries there is an option to cache the aggregation result by setting a cache ttl.
 However it is more effective to **avoid cache** and design good aggregation pipelines. In some cases a different scrape interval might also be a solution.
-For individual metrics and/or MongoDB servers older than 3.6 it might still be a good option though.
+For individual aggregations and/or MongoDB servers older than 3.6 it might still be a good option though.
 
 A better approach is using push instead a static cache, see bellow.
 
 Example:
 ```yaml
-metrics:
-- name: myapp_example_simplevalue_total
+aggregations:
+- metrics:
+  - name: myapp_example_simplevalue_total
+    help: 'Simple gauge metric which is cached for 5min'
+    value: total
   servers: [main]
-  help: 'Simple gauge metric which is cached for 5min'
-  value: total
   mode: pull
-  cache: 300
+  cache: 5m
   database: mydb
   collection: objects
   pipeline: |
@@ -208,12 +256,13 @@ will be invalidated automatically if anything changes within the configured Mong
 
 Example:
 ```yaml
-metrics:
-# With the mode push the pipeline is only executed if a change occured on the collection called objects
-- name: myapp_example_simplevalue_total
+aggregations:
+- metrics:
+  - name: myapp_example_simplevalue_total
+    help: 'Simple gauge metric'
+    value: total
   servers: [main]
-  help: 'Simple gauge metric'
-  value: total
+  # With the mode push the pipeline is only executed if a change occured on the collection called objects
   mode: push
   database: mydb
   collection: objects
@@ -224,7 +273,7 @@ metrics:
 ```
 
 ## Debug
-The mongodb-query-exporters also publishes a counter metric called `mongodb_query_exporter_query_total` which counts query results for each configured metric.
+The mongodb-query-exporters also publishes a counter metric called `mongodb_query_exporter_query_total` which counts query results for each configured aggregation.
 Furthermore you might increase the log level to get more insight.
 
 ## Used by

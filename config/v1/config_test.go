@@ -45,7 +45,7 @@ func TestBuild(t *testing.T) {
 			},
 		}
 
-		os.Setenv("MDBEXPORTER_COLLECTORS_0_MONGODB_URI", "mongodb://bar:27017")
+		os.Setenv("MDBEXPORTER_SERVER_0_MONGODB_URI", "mongodb://bar:27017")
 		_, err := conf.Build()
 		if err != nil {
 			t.Error(err)

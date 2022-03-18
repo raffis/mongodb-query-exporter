@@ -23,7 +23,7 @@ PREFIX              ?= $(shell pwd)
 BIN_DIR             ?= $(shell pwd)
 
 
-all: deps vet format build test
+all: deps vet fmt test build
 
 style:
 	@echo ">> checking code style"

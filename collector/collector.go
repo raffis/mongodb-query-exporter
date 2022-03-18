@@ -16,18 +16,19 @@ import (
 // Each collector needs a MongoDB client and a list of metrics which should be generated.
 // You may initialize multiple collectors for multiple MongoDB servers.
 type Collector struct {
-	servers []*server
-	logger  Logger
-	config  *Config
-	metrics []*Metric
-	counter *prometheus.CounterVec
-	cache   map[string]*cacheEntry
-	mutex   *sync.Mutex
+	servers      []*server
+	logger       Logger
+	config       *Config
+	metrics      []*Metric
+	aggregations []*Aggregation
+	counter      *prometheus.CounterVec
+	cache        map[string]*cacheEntry
+	mutex        *sync.Mutex
 }
 
 // A cached metric consists of the metric and a ttl in seconds
 type cacheEntry struct {
-	m   prometheus.Metric
+	m   []prometheus.Metric
 	ttl int64
 }
 
@@ -48,26 +49,30 @@ type Config struct {
 	DefaultCollection string
 }
 
-// A metric defines what metric should be generated from what MongoDB aggregation.
-// The pipeline configures (as JSON) the aggreation query
+// Aggregation defines what aggregation pipeline is executed on what servers
+type Aggregation struct {
+	Servers    []string
+	Cache      int64
+	Mode       string
+	Database   string
+	Collection string
+	Pipeline   string
+	Metrics    []*Metric
+	pipeline   bson.A
+	validUntil time.Time
+}
+
+// A metric defines how a certain value is exported from a MongoDB aggregation
 type Metric struct {
 	Name          string
 	Type          string
-	Servers       []string
 	Help          string
 	Value         string
 	OverrideEmpty bool
 	EmptyValue    int64
-	Cache         int64
 	ConstLabels   prometheus.Labels
-	Mode          string
 	Labels        []string
-	Database      string
-	Collection    string
-	Pipeline      string
 	desc          *prometheus.Desc
-	pipeline      bson.A
-	validUntil    time.Time
 }
 
 var (
@@ -150,31 +155,37 @@ func (c *Collector) RegisterServer(name string, driver Driver) error {
 }
 
 // Run metric c for each metric either in push or pull mode
-func (c *Collector) RegisterMetric(metric *Metric) error {
-	desc := prometheus.NewDesc(
+func (c *Collector) RegisterAggregation(aggregation *Aggregation) error {
+	if len(aggregation.Servers) != 0 && len(aggregation.Servers) != len(c.GetServers(aggregation.Servers)) {
+		return fmt.Errorf("aggregation bound to server which have not been found")
+	}
+
+	err := bson.UnmarshalExtJSON([]byte(aggregation.Pipeline), false, &aggregation.pipeline)
+	if err != nil {
+		return errors.Wrap(err, "failed to decode json aggregation pipeline")
+	}
+
+	if c.config.DefaultCache > 0 && aggregation.Cache != 0 {
+		aggregation.Cache = c.config.DefaultCache
+	}
+
+	for _, metric := range aggregation.Metrics {
+		c.logger.Debugf("register metric %s", metric.Name)
+		metric.desc = c.describeMetric(metric)
+	}
+
+	c.aggregations = append(c.aggregations, aggregation)
+	return nil
+}
+
+// Create prometheus descriptor
+func (c *Collector) describeMetric(metric *Metric) *prometheus.Desc {
+	return prometheus.NewDesc(
 		metric.Name,
 		metric.Help,
 		metric.Labels,
 		metric.ConstLabels,
 	)
-	metric.desc = desc
-
-	if len(metric.Servers) != 0 && len(metric.Servers) != len(c.GetServers(metric.Servers)) {
-		return fmt.Errorf("metric %s bound to servers which have not been configured", metric.Name)
-	}
-
-	err := bson.UnmarshalExtJSON([]byte(metric.Pipeline), false, &metric.pipeline)
-	if err != nil {
-		return errors.Wrap(err, "failed to decode json aggregation pipeline")
-	}
-
-	if c.config.DefaultCache > 0 && metric.Cache != 0 {
-		metric.Cache = c.config.DefaultCache
-	}
-
-	c.logger.Debugf("register metric %s with pipeline %s", metric.Name, metric.pipeline)
-	c.metrics = append(c.metrics, metric)
-	return nil
 }
 
 // Return registered drivers
@@ -204,8 +215,10 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 		c.counter.Describe(ch)
 	}
 
-	for _, metric := range c.metrics {
-		ch <- metric.desc
+	for _, aggregation := range c.aggregations {
+		for _, metric := range aggregation.Metrics {
+			ch <- metric.desc
+		}
 	}
 }
 
@@ -214,20 +227,23 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.logger.Debugf("start collecting metrics")
 	var wg sync.WaitGroup
 
-	for _, metric := range c.metrics {
-		for _, srv := range c.GetServers(metric.Servers) {
-			m, err := c.getCached(metric, srv)
+	for i, aggregation := range c.aggregations {
+		for _, srv := range c.GetServers(aggregation.Servers) {
+			metrics, err := c.getCached(aggregation, srv)
 
 			if err == nil {
-				c.logger.Debugf("use value from cache for %s", metric.Name)
-				ch <- m
+				c.logger.Debugf("use value from cache for %s", aggregation.Pipeline)
+
+				for _, m := range metrics {
+					ch <- m
+				}
 				continue
 			}
 
 			wg.Add(1)
-			go func(metric *Metric, srv *server, ch chan<- prometheus.Metric) {
+			go func(i int, aggregation *Aggregation, srv *server, ch chan<- prometheus.Metric) {
 				defer wg.Done()
-				err := c.generateMetrics(metric, srv, ch)
+				err := c.aggregate(aggregation, srv, ch)
 
 				if c.counter == nil {
 					return
@@ -237,17 +253,17 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 				if err == nil {
 					result = ResultSuccess
 				} else {
-					c.logger.Errorf("failed to generate metric : %s", err)
+					c.logger.Errorf("failed to generate metric: %s", err)
 
 					result = ResultError
 				}
 
 				c.counter.With(prometheus.Labels{
-					"server": srv.name,
-					"metric": metric.Name,
-					"result": result,
+					"server":      srv.name,
+					"aggregation": fmt.Sprintf("aggregation_%d", i),
+					"result":      result,
 				}).Inc()
-			}(metric, srv, ch)
+			}(i, aggregation, srv, ch)
 		}
 	}
 
@@ -258,37 +274,38 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
-func (c *Collector) updateCache(metric *Metric, srv *server, m prometheus.Metric) {
+func (c *Collector) updateCache(aggregation *Aggregation, srv *server, m []prometheus.Metric) {
 	var ttl int64
 
-	if (metric.Mode == ModePush && metric.Cache == 0) || metric.Cache == -1 {
-		c.logger.Debugf("cache metric %s until new push", metric.Name)
+	if (aggregation.Mode == ModePush && aggregation.Cache == 0) || aggregation.Cache == -1 {
+		c.logger.Debugf("cache metrics from aggregation %s until new push", aggregation.Pipeline)
 		ttl = -1
 
-	} else if metric.Cache > 0 {
-		c.logger.Debugf("cache metric %s for %d", metric.Name, metric.Cache)
-		ttl = time.Now().Unix() + metric.Cache
+	} else if aggregation.Cache > 0 {
+		c.logger.Debugf("cache metris from aggregation %s for %d", aggregation.Pipeline, aggregation.Cache)
+		ttl = time.Now().Unix() + aggregation.Cache
 	} else {
-		c.logger.Debugf("skip cache for %s", metric.Name)
+		c.logger.Debugf("skip caching metrics from aggregation %s", aggregation.Pipeline)
 		return
 	}
 
 	c.mutex.Lock()
-	c.cache[metric.Name+srv.name] = &cacheEntry{m, ttl}
-	c.mutex.Unlock()
+	defer c.mutex.Unlock()
+
+	c.cache[aggregation.Pipeline+srv.name] = &cacheEntry{m, ttl}
 }
 
-func (c *Collector) getCached(metric *Metric, srv *server) (prometheus.Metric, error) {
+func (c *Collector) getCached(aggregation *Aggregation, srv *server) ([]prometheus.Metric, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	if e, exists := c.cache[metric.Name+srv.name]; exists {
+	if e, exists := c.cache[aggregation.Pipeline+srv.name]; exists {
 		if e.ttl == -1 || e.ttl >= time.Now().Unix() {
 			return e.m, nil
 		}
 
 		// entry can be removed from cache since its expired
-		delete(c.cache, metric.Name+srv.name)
+		delete(c.cache, aggregation.Pipeline+srv.name)
 	}
 
 	return nil, ErrNotCached
@@ -299,30 +316,30 @@ func (c *Collector) getCached(metric *Metric, srv *server) (prometheus.Metric, e
 // will be re evaluated during the next scrape.
 // This is a non blocking operation.
 func (c *Collector) StartCacheInvalidator() error {
-	for _, metric := range c.metrics {
-		if metric.Type != ModePush {
+	for _, aggregation := range c.aggregations {
+		if aggregation.Mode != ModePush {
 			continue
 		}
 
-		for _, srv := range c.GetServers(metric.Servers) {
-			go func(metric *Metric, srv *server) {
-				err := c.pushUpdate(metric, srv)
+		for _, srv := range c.GetServers(aggregation.Servers) {
+			go func(aggregation *Aggregation, srv *server) {
+				err := c.pushUpdate(aggregation, srv)
 
 				if err != nil {
 					c.logger.Errorf("%s; failed to watch for updates, fallback to pull", err)
 				}
-			}(metric, srv)
+			}(aggregation, srv)
 		}
 	}
 
 	return nil
 }
 
-func (c *Collector) pushUpdate(metric *Metric, srv *server) error {
+func (c *Collector) pushUpdate(aggregation *Aggregation, srv *server) error {
 	ctx := context.Background()
 
-	c.logger.Infof("start changestream on %s.%s, waiting for changes", metric.Database, metric.Collection)
-	cursor, err := srv.driver.Watch(ctx, metric.Database, metric.Collection, bson.A{})
+	c.logger.Infof("start changestream on %s.%s, waiting for changes", aggregation.Database, aggregation.Collection)
+	cursor, err := srv.driver.Watch(ctx, aggregation.Database, aggregation.Collection, bson.A{})
 
 	if err != nil {
 		return fmt.Errorf("failed to start changestream listener %s", err)
@@ -341,21 +358,20 @@ func (c *Collector) pushUpdate(metric *Metric, srv *server) error {
 
 		//Invalidate cached entry, aggregation must be executed during the next scrape
 		c.mutex.Lock()
-		delete(c.cache, metric.Name+srv.name)
+		delete(c.cache, aggregation.Pipeline+srv.name)
 		c.mutex.Unlock()
 	}
 
 	return nil
 }
 
-func (c *Collector) generateMetrics(metric *Metric, srv *server, ch chan<- prometheus.Metric) error {
-	c.logger.Debugf("generate metric %s from server %s", metric.Name, srv.name)
+func (c *Collector) aggregate(aggregation *Aggregation, srv *server, ch chan<- prometheus.Metric) error {
+	c.logger.Debugf("run aggregation %s on server %s", aggregation.Pipeline, srv.name)
 
 	ctx, cancel := context.WithTimeout(context.Background(), c.config.QueryTimeout*time.Second)
 	defer cancel()
 
-	cursor, err := srv.driver.Aggregate(ctx, metric.Database, metric.Collection, metric.pipeline)
-
+	cursor, err := srv.driver.Aggregate(ctx, aggregation.Database, aggregation.Collection, aggregation.pipeline)
 	if err != nil {
 		return err
 	}
@@ -363,12 +379,13 @@ func (c *Collector) generateMetrics(metric *Metric, srv *server, ch chan<- prome
 	var multierr *multierror.Error
 	var i int
 	var result = make(AggregationResult)
+	var metrics []prometheus.Metric
 
 	for cursor.Next(ctx) {
 		i++
 
 		err := cursor.Decode(&result)
-		c.logger.Debugf("found record %s from metric %s", result, metric.Name)
+		c.logger.Debugf("found record %s from aggregation %s", result, aggregation.Pipeline)
 
 		if err != nil {
 			multierr = multierror.Append(multierr, err)
@@ -376,36 +393,39 @@ func (c *Collector) generateMetrics(metric *Metric, srv *server, ch chan<- prome
 			continue
 		}
 
-		m, err := createMetric(metric, result)
+		for _, metric := range aggregation.Metrics {
+			m, err := createMetric(metric, result)
+			if err != nil {
+				return err
+			}
 
-		if err != nil {
-			return err
+			metrics = append(metrics, m)
+			ch <- m
 		}
-
-		c.updateCache(metric, srv, m)
-		ch <- m
 	}
 
 	if i == 0 {
-		if !metric.OverrideEmpty {
-			return fmt.Errorf("metric %s aggregation returned an empty result set", metric.Name)
-		}
+		for _, metric := range aggregation.Metrics {
+			if !metric.OverrideEmpty {
+				c.logger.Debugf("skip metric %s with an empty result from aggregation %s", metric.Name, aggregation.Pipeline)
+				continue
+			}
 
-		c.logger.Debugf("OverrideEmpty option is set for metric %s, overriding value with %d", metric.Name, metric.EmptyValue)
+			result[metric.Value] = int64(metric.EmptyValue)
+			for _, label := range metric.Labels {
+				result[label] = ""
+			}
 
-		result[metric.Value] = int64(metric.EmptyValue)
-		for _, label := range metric.Labels {
-			result[label] = ""
-		}
-		m, err := createMetric(metric, result)
-		if err != nil {
-			return err
-		}
+			m, err := createMetric(metric, result)
+			if err != nil {
+				return err
+			}
 
-		c.updateCache(metric, srv, m)
-		ch <- m
+			ch <- m
+		}
 	}
 
+	c.updateCache(aggregation, srv, metrics)
 	return multierr.ErrorOrNil()
 }
 

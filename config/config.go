@@ -17,5 +17,5 @@ var Counter = prometheus.NewCounterVec(
 		Name: "mongodb_query_exporter_query_total",
 		Help: "How many MongoDB queries have been processed, partitioned by metric, server and status",
 	},
-	[]string{"metric", "server", "result"},
+	[]string{"aggregation", "server", "result"},
 )
