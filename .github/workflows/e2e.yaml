@@ -11,7 +11,7 @@ jobs:
   build:
     strategy:
       matrix:
-        mongodb: [4.4, 5.0]
+        mongodb: ["4.4", "5.0"]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -86,6 +86,7 @@ jobs:
         if: failure()
         run: |
           kubectl -n kube-system describe pods
+          kubectl -n mongodb describe pods
           kubectl -n mongodb-system describe pods
           kubectl -n mongodb-system get all
           kubectl -n mongodb-system logs deploy/mongodb-query-exporter
