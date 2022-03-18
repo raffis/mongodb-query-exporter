@@ -4,7 +4,6 @@ builds:
   - skip: false
 
 release:
-  prerelease: "true"
   extra_files:
     - glob: config/release/*.yaml
 
