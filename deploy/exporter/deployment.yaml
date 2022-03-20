@@ -14,8 +14,8 @@ spec:
         app: mongodb-query-exporter
     spec:
       containers:
-      - image: raffis/mongodb-query-exporter:latest
-        imagePullPolicy: IfNotPresent
+      - image: ghcr.io/raffis/mongodb-query-exporter:latest
+        imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true

@@ -100,7 +100,7 @@ func (conf *Config) Build() (*collector.Collector, error) {
 	c := collector.New(
 		collector.WithConfig(&collector.Config{
 			QueryTimeout:      conf.MongoDB.ConnectionTimeout,
-			DefaultCache:      conf.MongoDB.DefaultInterval,
+			DefaultCache:      time.Duration(conf.MongoDB.DefaultInterval) * time.Second,
 			DefaultDatabase:   conf.MongoDB.DefaultDatabase,
 			DefaultCollection: conf.MongoDB.DefaultCollection,
 		}),
@@ -119,7 +119,7 @@ func (conf *Config) Build() (*collector.Collector, error) {
 
 	for _, metric := range conf.Metrics {
 		err := c.RegisterAggregation(&collector.Aggregation{
-			Cache:      metric.Cache,
+			Cache:      time.Duration(metric.Cache) * time.Second,
 			Mode:       metric.Mode,
 			Database:   metric.Database,
 			Collection: metric.Collection,

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/user"
+	"time"
 
 	"github.com/raffis/mongodb-query-exporter/collector"
 	"github.com/raffis/mongodb-query-exporter/config"
@@ -26,7 +27,7 @@ var (
 	bind          string
 	uri           string
 	metricsPath   string
-	queryTimeout  int
+	queryTimeout  time.Duration
 	srv           *http.Server
 	promCollector *collector.Collector
 
@@ -103,7 +104,7 @@ func buildHTTPServer(reg prometheus.Gatherer, conf config.Config) *http.Server {
 		})
 	}
 
-	mux.HandleFunc(v2.HealthzPath, func(w http.ResponseWriter, r *http.Request) { http.Error(w, "OK", http.StatusOK) })
+	mux.HandleFunc(config.HealthzPath, func(w http.ResponseWriter, r *http.Request) { http.Error(w, "OK", http.StatusOK) })
 	mux.HandleFunc(conf.GetMetricsPath(), func(w http.ResponseWriter, r *http.Request) {
 		promhttp.HandlerFor(reg, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 	})
@@ -119,13 +120,13 @@ func Execute() error {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", v3.DefaultMongoDBURI, "MongoDB URI (default is mongodb://localhost:27017). Use MDBEXPORTER_SERVER_%d_MONGODB_URI envs if you target multiple server")
+	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", config.DefaultMongoDBURI, "MongoDB URI (default is mongodb://localhost:27017). Use MDBEXPORTER_SERVER_%d_MONGODB_URI envs if you target multiple server")
 	rootCmd.PersistentFlags().StringVarP(&configPath, "file", "f", "", "config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", v3.DefaultLogLevel, "Define the log level (default is warning) [debug,info,warn,error]")
-	rootCmd.PersistentFlags().StringVarP(&logEncoding, "log-encoding", "e", v3.DefaultLogEncoder, "Define the log format (default is json) [json,console]")
-	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", v3.DefaultBindAddr, "Address to bind http server (default is :9412)")
-	rootCmd.PersistentFlags().StringVarP(&metricsPath, "path", "p", v3.DefaultMetricsPath, "Metric path (default is /metrics)")
-	rootCmd.PersistentFlags().IntVarP(&queryTimeout, "query-timeout", "t", v3.DefaultQUeryTimeout, "Timeout for MongoDB queries")
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", config.DefaultLogLevel, "Define the log level (default is warning) [debug,info,warn,error]")
+	rootCmd.PersistentFlags().StringVarP(&logEncoding, "log-encoding", "e", config.DefaultLogEncoder, "Define the log format (default is json) [json,console]")
+	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", config.DefaultBindAddr, "Address to bind http server (default is :9412)")
+	rootCmd.PersistentFlags().StringVarP(&metricsPath, "path", "p", config.DefaultMetricsPath, "Metric path (default is /metrics)")
+	rootCmd.PersistentFlags().DurationVarP(&queryTimeout, "query-timeout", "t", config.DefaultQueryTimeout, "Timeout for MongoDB queries")
 	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 	viper.BindPFlag("log.encoding", rootCmd.PersistentFlags().Lookup("log-encoding"))
 	viper.BindPFlag("bind", rootCmd.PersistentFlags().Lookup("bind"))

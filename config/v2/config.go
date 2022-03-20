@@ -58,18 +58,6 @@ type Server struct {
 	URI  string
 }
 
-// Config defaults
-const (
-	DefaultServerName   = "main"
-	DefaultMongoDBURI   = "mongodb://localhost:27017"
-	DefaultMetricsPath  = "/metrics"
-	DefaultBindAddr     = ":9412"
-	DefaultQUeryTimeout = 10
-	HealthzPath         = "/healthz"
-	DefaultLogEncoder   = "json"
-	DefaultLogLevel     = "warn"
-)
-
 // Get address where the http server should be bound to
 func (conf *Config) GetBindAddr() string {
 	return conf.Bind
@@ -84,11 +72,11 @@ func (conf *Config) GetMetricsPath() string {
 // all configured collectors
 func (conf *Config) Build() (*collector.Collector, error) {
 	if conf.Log.Encoding == "" {
-		conf.Log.Encoding = DefaultLogEncoder
+		conf.Log.Encoding = config.DefaultLogEncoder
 	}
 
 	if conf.Log.Level == "" {
-		conf.Log.Level = DefaultLogLevel
+		conf.Log.Level = config.DefaultLogLevel
 	}
 
 	l, err := zap.New(conf.Log)
@@ -97,24 +85,24 @@ func (conf *Config) Build() (*collector.Collector, error) {
 	}
 
 	if conf.MetricsPath == "" {
-		conf.MetricsPath = DefaultMetricsPath
-	} else if conf.MetricsPath == HealthzPath {
-		return nil, fmt.Errorf("%s not allowed as metrics path", HealthzPath)
+		conf.MetricsPath = config.DefaultMetricsPath
+	} else if conf.MetricsPath == config.HealthzPath {
+		return nil, fmt.Errorf("%s not allowed as metrics path", config.HealthzPath)
 	}
 
 	if conf.Bind == "" {
-		conf.Bind = DefaultBindAddr
+		conf.Bind = config.DefaultBindAddr
 	}
 
 	l.Sugar().Infof("will listen on %s", conf.Bind)
 
 	if conf.Global.QueryTimeout == 0 {
-		conf.Global.QueryTimeout = 10
+		conf.Global.QueryTimeout = config.DefaultQueryTimeout
 	}
 
 	if len(conf.Servers) == 0 {
 		conf.Servers = append(conf.Servers, &Server{
-			Name: DefaultServerName,
+			Name: config.DefaultServerName,
 		})
 	}
 
@@ -122,7 +110,7 @@ func (conf *Config) Build() (*collector.Collector, error) {
 	c := collector.New(
 		collector.WithConfig(&collector.Config{
 			QueryTimeout:      conf.Global.QueryTimeout,
-			DefaultCache:      conf.Global.DefaultCache,
+			DefaultCache:      time.Duration(conf.Global.DefaultCache) * time.Second,
 			DefaultMode:       conf.Global.DefaultMode,
 			DefaultDatabase:   conf.Global.DefaultDatabase,
 			DefaultCollection: conf.Global.DefaultCollection,
@@ -139,7 +127,7 @@ func (conf *Config) Build() (*collector.Collector, error) {
 		}
 
 		if srv.URI == "" {
-			srv.URI = DefaultMongoDBURI
+			srv.URI = config.DefaultMongoDBURI
 		}
 
 		srv.URI = os.ExpandEnv(srv.URI)
@@ -171,7 +159,7 @@ func (conf *Config) Build() (*collector.Collector, error) {
 	for _, metric := range conf.Metrics {
 		err := c.RegisterAggregation(&collector.Aggregation{
 			Servers:    metric.Servers,
-			Cache:      metric.Cache,
+			Cache:      time.Duration(metric.Cache) * time.Second,
 			Mode:       metric.Mode,
 			Database:   metric.Database,
 			Collection: metric.Collection,

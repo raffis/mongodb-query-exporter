@@ -69,7 +69,7 @@ docker-push: ## Push docker image with the manager.
 
 .PHONY: deploy
 deploy:
-	cd deploy/exporter && $(KUSTOMIZE) edit set image raffis/mongodb-query-exporter=${IMG}
+	cd deploy/exporter && $(KUSTOMIZE) edit set image ghcr.io/raffis/mongodb-query-exporter=${IMG}
 	$(KUSTOMIZE) build deploy/exporter | kubectl apply -f -
 
 .PHONY: undeploy

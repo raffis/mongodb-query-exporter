@@ -41,12 +41,12 @@ func TestMetricsConfigv2(t *testing.T) {
 	}
 
 	tests := []integrationTest{
-		integrationTest{
+		/*integrationTest{
 			name:            "integration test using config v1.0 and mongodb:5.0",
 			configPath:      "../example/configv1.yaml",
 			mongodbImage:    "mongo:5.0",
 			expectedMetrics: expected,
-		},
+		},*/
 		integrationTest{
 			name:            "integration test using config v2.0 and mongodb:5.0",
 			configPath:      "../example/configv2.yaml",

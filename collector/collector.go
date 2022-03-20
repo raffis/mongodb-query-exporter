@@ -43,7 +43,7 @@ type option func(c *Collector)
 // Collector configuration with default metric configurations
 type Config struct {
 	QueryTimeout      time.Duration
-	DefaultCache      int64
+	DefaultCache      time.Duration
 	DefaultMode       string
 	DefaultDatabase   string
 	DefaultCollection string
@@ -52,7 +52,7 @@ type Config struct {
 // Aggregation defines what aggregation pipeline is executed on what servers
 type Aggregation struct {
 	Servers    []string
-	Cache      int64
+	Cache      time.Duration
 	Mode       string
 	Database   string
 	Collection string
@@ -102,7 +102,7 @@ func New(opts ...option) *Collector {
 	c := &Collector{
 		logger: &dummyLogger{},
 		config: &Config{
-			QueryTimeout: 10,
+			QueryTimeout: 10 * time.Second,
 		},
 	}
 
@@ -283,7 +283,7 @@ func (c *Collector) updateCache(aggregation *Aggregation, srv *server, m []prome
 
 	} else if aggregation.Cache > 0 {
 		c.logger.Debugf("cache metris from aggregation %s for %d", aggregation.Pipeline, aggregation.Cache)
-		ttl = time.Now().Unix() + aggregation.Cache
+		ttl = time.Now().Unix() + int64(aggregation.Cache.Seconds())
 	} else {
 		c.logger.Debugf("skip caching metrics from aggregation %s", aggregation.Pipeline)
 		return
@@ -368,7 +368,7 @@ func (c *Collector) pushUpdate(aggregation *Aggregation, srv *server) error {
 func (c *Collector) aggregate(aggregation *Aggregation, srv *server, ch chan<- prometheus.Metric) error {
 	c.logger.Debugf("run aggregation %s on server %s", aggregation.Pipeline, srv.name)
 
-	ctx, cancel := context.WithTimeout(context.Background(), c.config.QueryTimeout*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), c.config.QueryTimeout)
 	defer cancel()
 
 	cursor, err := srv.driver.Aggregate(ctx, aggregation.Database, aggregation.Collection, aggregation.pipeline)

@@ -24,6 +24,7 @@ Notably the config format v3.0 was introduced in this release. See readme.md for
 * kustomize base #29
 * Add e2e tests and improved pipeline
 * Add matrix mongodb version e2e tests
+* Publish container image to ghcr.io instead of docker hub
 
 
 # 1.0.0-beta8

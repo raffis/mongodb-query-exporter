@@ -12,7 +12,7 @@ fullnameOverride: ""
 
 image:
   pullPolicy: IfNotPresent
-  repository: raffis/mongodb-query-exporter
+  repository: ghcr.io/raffis/mongodb-query-exporter
   tag:
 
 imagePullSecrets: []

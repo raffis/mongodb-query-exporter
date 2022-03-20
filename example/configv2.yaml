@@ -7,7 +7,7 @@ log:
   development: false
   disableCaller: false
 global:
-  queryTimeout: 10
+  queryTimeout: "10m"
   maxConnection: 3
   defaultCache: 5
 servers:

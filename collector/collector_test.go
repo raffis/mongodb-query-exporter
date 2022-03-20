@@ -3,6 +3,7 @@ package collector
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -387,7 +388,7 @@ func TestCachedMetric(t *testing.T) {
 						Help:  "Cached for 60s",
 					},
 				},
-				Cache:    60,
+				Cache:    60 * time.Second,
 				Pipeline: "[{\"$match\":{\"foo\":\"bar\"}}]",
 			},
 			docs: []interface{}{AggregationResult{

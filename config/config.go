@@ -1,8 +1,22 @@
 package config
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/raffis/mongodb-query-exporter/collector"
+)
+
+// Config defaults
+const (
+	DefaultServerName   = "main"
+	DefaultMongoDBURI   = "mongodb://localhost:27017"
+	DefaultMetricsPath  = "/metrics"
+	DefaultBindAddr     = ":9412"
+	DefaultQueryTimeout = 10 * time.Second
+	HealthzPath         = "/healthz"
+	DefaultLogEncoder   = "json"
+	DefaultLogLevel     = "warn"
 )
 
 // A configuration format to build a Collector from

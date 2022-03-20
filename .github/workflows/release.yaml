@@ -45,13 +45,6 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           buildkitd-flags: "--debug"
-      - name: Publish to DockerHub
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: elgohr/Publish-Docker-Github-Action@master
-        with:
-          name: raffis/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
         with:
@@ -64,7 +57,6 @@ jobs:
         with:
           images: |
             ghcr.io/raffis/${{ env.APP }}
-            raffis/${{ env.APP }}
           tags: |
             type=raw,value=${{ steps.prep.outputs.VERSION }}
       - name: Publish multi-arch container image
@@ -81,8 +73,6 @@ jobs:
         run: |
           docker buildx imagetools inspect ghcr.io/raffis/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
           docker pull ghcr.io/doodlescheduling/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
-          docker buildx imagetools inspect raffis/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
-          docker pull raffis/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
       - name: Generate release manifests
         if: startsWith(github.ref, 'refs/tags/v')
         run: |

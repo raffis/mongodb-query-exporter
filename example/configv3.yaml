@@ -7,9 +7,9 @@ log:
   development: false
   disableCaller: false
 global:
-  queryTimeout: 10
+  queryTimeout: "10s"
   maxConnection: 3
-  defaultCache: 5
+  defaultCache: 0
 servers:
 - name: main
   uri: mongodb://localhost:27017
@@ -26,7 +26,6 @@ aggregations:
     emptyValue: 0       # create a metric with value 0
     labels: []
     constLabels: []
-  cache: 0
   mode: pull
   pipeline: |
     [
@@ -42,6 +41,7 @@ aggregations:
     labels: [type,status]
     constLabels: []
   mode: pull
+  cache: "5m"
   pipeline: |
     [
       {"$group": {
