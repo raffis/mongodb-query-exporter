@@ -5,7 +5,6 @@
 [![Coverage Status](https://coveralls.io/repos/github/raffis/mongodb-query-exporter/badge.svg?branch=master)](https://coveralls.io/github/raffis/mongodb-query-exporter?branch=master)
 [![release](https://img.shields.io/github/release/raffis/mongodb-query-exporter/all.svg)](https://github.com/raffis/mongodb-query-exporter/releases)
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/prometheus-mongodb-query-exporter)](https://artifacthub.io/packages/search?repo=prometheus-mongodb-query-exporter)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fraffis%2Fmongodb-query-exporter.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fraffis%2Fmongodb-query-exporter?ref=badge_shield)
 
 MongoDB aggregation query exporter for [Prometheus](https://prometheus.io).
 
