@@ -1,4 +1,4 @@
-version: 2.0
+version: 3.0
 bind: 0.0.0.0:9412
 metricsPath: /metrics
 log:
@@ -7,39 +7,41 @@ log:
   development: false
   disableCaller: false
 global:
-  queryTimeout: "10m"
+  queryTimeout: "10s"
   maxConnection: 3
-  defaultCache: 5
+  defaultCache: 0
 servers:
 - name: main
   uri: mongodb://localhost:27017
-metrics:
-- name: myapp_example_simplevalue_total
-  type: gauge #Can also be empty, the default is gauge
-  servers: [main] #Can also be empty, if empty the metric will be used for every server defined
-  help: 'Simple gauge metric'
-  value: total
-  overrideEmpty: true # if an empty result set is returned..
-  emptyValue: 0       # create a metric with value 0
-  labels: []
-  mode: pull
-  cache: 0
-  constLabels: []
-  database: mydb
+aggregations:
+- database: mydb
   collection: objects
+  servers: [main] #Can also be empty, if empty the metric will be used for every server defined
+  metrics:
+  - name: myapp_example_simplevalue_total
+    type: gauge #Can also be empty, the default is gauge
+    help: 'Simple gauge metric'
+    value: total
+    overrideEmpty: true # if an empty result set is returned..
+    emptyValue: 0       # create a metric with value 0
+    labels: []
+    constLabels: []
+  mode: pull
   pipeline: |
     [
       {"$count":"total"}
     ]
-- name: myapp_example_processes_total
-  type: gauge
-  help: 'The total number of processes in a job queue'
-  value: total
-  mode: pull
-  labels: [type,status]
-  constLabels: []
-  database: mydb
+- database: mydb
   collection: queue
+  metrics:
+  - name: myapp_example_processes_total
+    type: gauge
+    help: 'The total number of processes in a job queue'
+    value: total
+    labels: [type,status]
+    constLabels: []
+  mode: pull
+  cache: "5m"
   pipeline: |
     [
       {"$group": {
@@ -65,15 +67,16 @@ metrics:
           }}
       }}
     ]
-- name: myapp_events_total
-  type: gauge
-  help: 'The total number of events (created 1h ago or newer)'
-  value: count
-  mode: pull
-  labels: [type]
-  constLabels: []
-  database: mydb
+- database: mydb
   collection: events
+  metrics:
+  - name: myapp_events_total
+    type: gauge
+    help: 'The total number of events (created 1h ago or newer)'
+    value: count
+    labels: [type]
+    constLabels: []
+  mode: pull
   # Note $$NOW is only supported in MongoDB >= 4.2
   pipeline: |
     [

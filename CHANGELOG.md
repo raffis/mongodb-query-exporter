@@ -1,5 +1,44 @@
+# 1.0.0
+**Date**: 2022-03-18
+
+Out of beta!
+Notably the config format v3.0 was introduced in this release. See readme.md for more information.
+
+## Features
+* Support for env substitution within mongodb uri
+* Support multiple metric values per aggregation pipeline #24
+
+## Changes
+* update: mongodb driver 1.8.4 #38 @fredmaggiowski
+* Log a warning if no metrics are configured
+* Upgrade to go1.17
+* Add matrix mongodb version integration tests
+* Various code improvements
+
+## Bugfixes
+* Exporter works now even without any servers configured in the config and falls back to the uri env or localhost
+* Fallback to default logger if an empty encoder and/or level is configured
+
+## Packaging
+* Add support for podMonitor in helm chart
+* kustomize base #29
+* Add e2e tests and improved pipeline
+* Add matrix mongodb version e2e tests
+* Publish container image to ghcr.io instead of docker hub
+
+
+# 1.0.0-beta8
+**Date**: 2021-11-04
+
+## Features
+* Add an option to override value for empty result set #32 @guillaumelecerf
+
+## Changes
+* Helper functions for shared chart labels #33
+
+
 # 1.0.0-beta7
-**Date**: Mon Jan 18 21:34:20 CET 2020
+**Date**: 2021-01-18
 
 ## Bugfixes
 * Fixes missing Path in ServiceMonitor helm chart
@@ -9,7 +48,7 @@
 
 
 # 1.0.0-beta6
-**Date**: Thu Nov 12 22:35:21 CET 2020
+**Date**: 2020-11-12
 
 ## Bugfixes
 * Protect cache from concurrent access
@@ -19,7 +58,7 @@
 
 
 # 1.0.0-beta5
-**Date**: Wed Nov 11 22:33:21 CET 2020
+**Date**: 2020-11-11
 
 ## Features
 * Support for multiple MongoDB servers
@@ -41,7 +80,7 @@
 
 
 # 1.0.0-beta4
-**Date**: Tue Mar 24 15:57:21 CET 2020
+**Date**: 2020-03-24
 
 ## Bugfixes
 * Do not abort if lookup config in home fails
@@ -57,7 +96,7 @@
 
 
 # 1.0.0-beta3
-**Date**: Fri Mar 13 16:33:22 CET 2020
+**Date**: 2020-03-13
 
 ## Bugfixes
 * Metrics never updated within startPullListeners? #1

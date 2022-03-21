@@ -1,4 +1,4 @@
-package v2
+package v3
 
 import (
 	"context"
@@ -15,33 +15,39 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Configuration v2.0 format
+// Configuration v3.0 format
 type Config struct {
-	Bind        string
-	MetricsPath string
-	Log         zap.Config
-	Global      Global
-	Servers     []*Server
-	Metrics     []*Metric
+	Bind         string
+	MetricsPath  string
+	Log          zap.Config
+	Global       Global
+	Servers      []*Server
+	Aggregations []*collector.Aggregation
 }
 
+// Global config
 type Global struct {
 	QueryTimeout      time.Duration
 	MaxConnections    int32
-	DefaultCache      int64
+	DefaultCache      time.Duration
 	DefaultMode       string
 	DefaultDatabase   string
 	DefaultCollection string
 }
 
-// Metric defines an exported metric from a MongoDB aggregation pipeline
+// Aggregation defines what aggregation pipeline is executed on what servers
+type Aggregation struct {
+	Servers    []string
+	Cache      time.Duration
+	Mode       string
+	Database   string
+	Collection string
+	Pipeline   string
+	Metrics    []Metric
+}
+
+// Metric defines how a certain value is exported from a MongoDB aggregation
 type Metric struct {
-	Servers       []string
-	Cache         int64
-	Mode          string
-	Database      string
-	Collection    string
-	Pipeline      string
 	Name          string
 	Type          string
 	Help          string
@@ -110,7 +116,7 @@ func (conf *Config) Build() (*collector.Collector, error) {
 	c := collector.New(
 		collector.WithConfig(&collector.Config{
 			QueryTimeout:      conf.Global.QueryTimeout,
-			DefaultCache:      time.Duration(conf.Global.DefaultCache) * time.Second,
+			DefaultCache:      conf.Global.DefaultCache,
 			DefaultMode:       conf.Global.DefaultMode,
 			DefaultDatabase:   conf.Global.DefaultDatabase,
 			DefaultCollection: conf.Global.DefaultCollection,
@@ -152,32 +158,38 @@ func (conf *Config) Build() (*collector.Collector, error) {
 		}
 	}
 
-	if len(conf.Metrics) == 0 {
-		l.Sugar().Warn("no metrics have been configured")
+	if len(conf.Aggregations) == 0 {
+		l.Sugar().Warn("no aggregations have been configured")
 	}
 
-	for _, metric := range conf.Metrics {
-		err := c.RegisterAggregation(&collector.Aggregation{
-			Servers:    metric.Servers,
-			Cache:      time.Duration(metric.Cache) * time.Second,
-			Mode:       metric.Mode,
-			Database:   metric.Database,
-			Collection: metric.Collection,
-			Pipeline:   metric.Pipeline,
-			Metrics: []*collector.Metric{
-				&collector.Metric{
-					Name:          metric.Name,
-					Type:          metric.Type,
-					Help:          metric.Help,
-					Value:         metric.Value,
-					OverrideEmpty: metric.OverrideEmpty,
-					EmptyValue:    metric.EmptyValue,
-					ConstLabels:   metric.ConstLabels,
-					Labels:        metric.Labels,
-				},
-			},
-		})
+	for i, aggregation := range conf.Aggregations {
+		opts := &collector.Aggregation{
+			Servers:    aggregation.Servers,
+			Cache:      aggregation.Cache,
+			Mode:       aggregation.Mode,
+			Database:   aggregation.Database,
+			Collection: aggregation.Collection,
+			Pipeline:   aggregation.Pipeline,
+		}
 
+		for _, metric := range aggregation.Metrics {
+			opts.Metrics = append(opts.Metrics, &collector.Metric{
+				Name:          metric.Name,
+				Type:          metric.Type,
+				Help:          metric.Help,
+				Value:         metric.Value,
+				OverrideEmpty: metric.OverrideEmpty,
+				EmptyValue:    metric.EmptyValue,
+				ConstLabels:   metric.ConstLabels,
+				Labels:        metric.Labels,
+			})
+		}
+
+		if len(conf.Aggregations) == 0 {
+			l.Sugar().Warn("no metrics have been configured for aggregation_%d", i)
+		}
+
+		err := c.RegisterAggregation(aggregation)
 		if err != nil {
 			return c, err
 		}

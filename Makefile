@@ -13,18 +13,17 @@
 
 GO     := go
 GOPATH := $(firstword $(subst :, ,$(shell $(GO) env GOPATH)))
-PROMU  := $(GOPATH)/bin/promu
+KUSTOMIZE := kustomize
+IMG := raffis/mongodb-query-exporter:latest
 pkgs    := $(shell $(GO) list ./... | grep -v /vendor/)
 units    := $(shell $(GO) list ./... | grep -v /vendor/ | grep -v cmd)
 integrations    := $(shell $(GO) list ./... | grep cmd)
 
 PREFIX              ?= $(shell pwd)
 BIN_DIR             ?= $(shell pwd)
-DOCKER_IMAGE_NAME   ?= raffis/mongodb-query-exporter
-DOCKER_IMAGE_TAG    ?= latest
 
 
-all: deps vet format build test
+all: deps vet fmt test build
 
 style:
 	@echo ">> checking code style"
@@ -44,7 +43,7 @@ deps:
 	@echo ">> install dependencies"
 	@$(GO) mod download
 
-format:
+fmt:
 	@echo ">> formatting code"
 	@$(GO) fmt $(pkgs)
 
@@ -52,22 +51,38 @@ vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
 
-build: promu
+build:
 	@echo ">> building binaries"
-	@$(PROMU) build --prefix $(PREFIX)
+	go build -o mongodb_query_exporter main.go
 
-tarball: promu
-	@echo ">> building release tarball"
-	@$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
+.PHONY: run
+run: fmt vet
+	go run ./main.go
 
-docker:
-	@echo ">> building docker image"
-	@docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
+.PHONY: docker-build
+docker-build: test ## Build docker image with the manager.
+	docker build -t ${IMG} .
 
-promu:
-	@GOOS=$(shell uname -s | tr A-Z a-z) \
-		GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
-		$(GO) get -u github.com/prometheus/promu
+.PHONY: docker-push
+docker-push: ## Push docker image with the manager.
+	docker push ${IMG}
 
+.PHONY: deploy
+deploy:
+	cd deploy/exporter && $(KUSTOMIZE) edit set image ghcr.io/raffis/mongodb-query-exporter=${IMG}
+	$(KUSTOMIZE) build deploy/exporter | kubectl apply -f -
 
-.PHONY: all style format build test vet tarball docker promu
+.PHONY: undeploy
+undeploy: ## Undeploy exporter from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+.PHONY: deploy-test
+deploy-test:
+	cd deploy/test && $(KUSTOMIZE) edit set image ghcr.io/raffis/mongodb-query-exporter=${IMG}
+	$(KUSTOMIZE) build deploy/test | kubectl apply -f -
+
+.PHONY: undeploy-test
+undeploy-test: ## Undeploy exporter from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/test | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+.PHONY: all style fmt build test vet

@@ -3,9 +3,9 @@ package v1
 import (
 	"context"
 	"os"
-	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/raffis/mongodb-query-exporter/collector"
 	"github.com/raffis/mongodb-query-exporter/config"
 	"github.com/raffis/mongodb-query-exporter/x/zap"
@@ -18,7 +18,7 @@ type Config struct {
 	MongoDB  MongoDB
 	Bind     string
 	LogLevel string
-	Metrics  []*collector.Metric
+	Metrics  []*Metric
 }
 
 // MongoDB client options
@@ -29,6 +29,23 @@ type MongoDB struct {
 	DefaultInterval   int64
 	DefaultDatabase   string
 	DefaultCollection string
+}
+
+// Metric defines an exported metric from a MongoDB aggregation pipeline
+type Metric struct {
+	Cache         int64
+	Mode          string
+	Database      string
+	Collection    string
+	Pipeline      string
+	Name          string
+	Type          string
+	Help          string
+	Value         string
+	OverrideEmpty bool
+	EmptyValue    int64
+	ConstLabels   prometheus.Labels
+	Labels        []string
 }
 
 // Get address where the http server should be bound to
@@ -58,7 +75,7 @@ func (conf *Config) Build() (*collector.Collector, error) {
 	}
 
 	l.Sugar().Infof("will listen on %s", conf.Bind)
-	env := os.Getenv("MDBEXPORTER_COLLECTORS_0_MONGODB_URI")
+	env := os.Getenv("MDBEXPORTER_SERVER_0_MONGODB_URI")
 
 	if env != "" {
 		conf.MongoDB.URI = env
@@ -83,7 +100,7 @@ func (conf *Config) Build() (*collector.Collector, error) {
 	c := collector.New(
 		collector.WithConfig(&collector.Config{
 			QueryTimeout:      conf.MongoDB.ConnectionTimeout,
-			DefaultCache:      conf.MongoDB.DefaultInterval,
+			DefaultCache:      time.Duration(conf.MongoDB.DefaultInterval) * time.Second,
 			DefaultDatabase:   conf.MongoDB.DefaultDatabase,
 			DefaultCollection: conf.MongoDB.DefaultCollection,
 		}),
@@ -91,15 +108,36 @@ func (conf *Config) Build() (*collector.Collector, error) {
 		collector.WithCounter(config.Counter),
 	)
 
-	name := strings.Join(opts.Hosts, ",")
-	err = c.RegisterServer(name, d)
+	err = c.RegisterServer("main", d)
 	if err != nil {
 		return c, err
 	}
 
+	if len(conf.Metrics) == 0 {
+		l.Sugar().Warn("no metrics have been configured")
+	}
+
 	for _, metric := range conf.Metrics {
-		metric.Servers = []string{name}
-		err := c.RegisterMetric(metric)
+		err := c.RegisterAggregation(&collector.Aggregation{
+			Cache:      time.Duration(metric.Cache) * time.Second,
+			Mode:       metric.Mode,
+			Database:   metric.Database,
+			Collection: metric.Collection,
+			Pipeline:   metric.Pipeline,
+			Metrics: []*collector.Metric{
+				&collector.Metric{
+					Name:          metric.Name,
+					Type:          metric.Type,
+					Help:          metric.Help,
+					Value:         metric.Value,
+					OverrideEmpty: metric.OverrideEmpty,
+					EmptyValue:    metric.EmptyValue,
+					ConstLabels:   metric.ConstLabels,
+					Labels:        metric.Labels,
+				},
+			},
+		})
+
 		if err != nil {
 			return c, err
 		}
