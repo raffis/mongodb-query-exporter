@@ -5,11 +5,11 @@ builds:
 
 release:
   extra_files:
-    - glob: config/release/*.yaml
+    - glob: deploy/release/*.yaml
 
 checksum:
   extra_files:
-    - glob: config/release/*.yaml
+    - glob: deploy/release/*.yaml
 
 source:
   enabled: true
