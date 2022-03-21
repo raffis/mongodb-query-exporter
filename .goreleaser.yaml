@@ -25,14 +25,14 @@ sboms:
 # all files (including the sboms) are included in the checksum
 # https://goreleaser.com/customization/sign
 signs:
-  - cmd: cosign
-   env:
-      - COSIGN_EXPERIMENTAL=1
-    certificate: "${artifact}.pem"
-    args:
-      - sign-blob
-      - "--output-certificate=${certificate}"
-      - "--output-signature=${signature}"
-      - "${artifact}"
-    artifacts: checksum
-    output: true
+- cmd: cosign
+  env:
+  - COSIGN_EXPERIMENTAL=1
+  certificate: "${artifact}.pem"
+  args:
+  - sign-blob
+  - "--output-certificate=${certificate}"
+  - "--output-signature=${signature}"
+  - "${artifact}"
+  artifacts: checksum
+  output: true
