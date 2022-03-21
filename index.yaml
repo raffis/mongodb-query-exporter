@@ -2,6 +2,28 @@ apiVersion: v1
 entries:
   prometheus-mongodb-query-exporter:
   - apiVersion: v2
+    appVersion: v1.0.0
+    created: "2022-03-21T16:44:54.676462794Z"
+    description: A Prometheus exporter for MongoDB custom aggregations
+    digest: 50afa30fc20d56b1d0462ed5d50a4c7d0761c174537445b18f9428a83bd2cee8
+    home: https://github.com/raffis/mongodb-query-exporter
+    keywords:
+    - exporter
+    - metrics
+    - mongodb
+    - aggregation
+    - query
+    - prometheus
+    maintainers:
+    - email: raffael.sahli@gmail.com
+      name: raffis
+    name: prometheus-mongodb-query-exporter
+    sources:
+    - https://github.com/raffis/mongodb-query-exporter
+    urls:
+    - https://github.com/raffis/mongodb-query-exporter/releases/download/prometheus-mongodb-query-exporter-2.0.1/prometheus-mongodb-query-exporter-2.0.1.tgz
+    version: 2.0.1
+  - apiVersion: v2
     appVersion: v1.0.0-beta7
     created: "2021-11-04T15:48:27.46137771Z"
     description: A Prometheus exporter for MongoDB custom aggregations
@@ -77,4 +99,4 @@ entries:
     urls:
     - https://github.com/raffis/mongodb-query-exporter/releases/download/prometheus-mongodb-query-exporter-1.0.0/prometheus-mongodb-query-exporter-1.0.0.tgz
     version: 1.0.0
-generated: "2020-10-04T21:16:21.850622497Z"
+generated: "2022-03-21T16:44:54.676479594Z"
