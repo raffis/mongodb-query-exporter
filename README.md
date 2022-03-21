@@ -5,6 +5,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/raffis/mongodb-query-exporter/badge.svg?branch=master)](https://coveralls.io/github/raffis/mongodb-query-exporter?branch=master)
 [![Docker Pulls](https://img.shields.io/docker/pulls/raffis/mongodb-query-exporter.svg?maxAge=604800)](https://hub.docker.com/r/raffis/mongodb-query-exporter)
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/prometheus-mongodb-query-exporter)](https://artifacthub.io/packages/search?repo=prometheus-mongodb-query-exporter)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fraffis%2Fmongodb-query-exporter.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fraffis%2Fmongodb-query-exporter?ref=badge_shield)
 
 MongoDB aggregation query exporter for [Prometheus](https://prometheus.io).
 
@@ -294,3 +295,7 @@ See the [config-map here](https://github.com/gyselroth/balloon-helm/blob/master/
 
 
 Please submit a PR if your project should be listed here!
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fraffis%2Fmongodb-query-exporter.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fraffis%2Fmongodb-query-exporter?ref=badge_large)
