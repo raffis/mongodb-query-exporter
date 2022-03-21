@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - image: ghcr.io/raffis/mongodb-query-exporter:latest
-        imagePullPolicy: Always
+        imagePullPolicy: Never
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
