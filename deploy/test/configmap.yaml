@@ -17,8 +17,8 @@ data:
       mode: pull
       cache: 0
       constLabels: []
-      database: system
-      collection: users
+      database: admin
+      collection: system.users
       pipeline: |
         [
           {"$count":"total"}
