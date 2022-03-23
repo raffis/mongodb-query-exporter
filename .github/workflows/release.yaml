@@ -73,7 +73,13 @@ jobs:
         run: |
           docker buildx imagetools inspect ghcr.io/raffis/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
           docker pull ghcr.io/raffis/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
-      - name: Generate release manifests
+      - uses: sigstore/cosign-installer@main
+      - name: Sign images
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign ghcr.io/raffis/${{ env.APP }}:${{ steps.prep.outputs.VERSION }}
+      - name: Generate release artifacts
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           mkdir -p deploy/release
