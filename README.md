@@ -115,7 +115,7 @@ log:
   development: false
   disableCaller: false
 global:
-  queryTimeout: 10
+  queryTimeout: 3s
   maxConnection: 3
   defaultCache: 0
 servers:
