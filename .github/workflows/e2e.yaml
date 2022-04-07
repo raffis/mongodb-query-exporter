@@ -77,7 +77,8 @@ jobs:
       - name: Run tests
         run: |
           kubectl -n mongodb-system port-forward deployment/mongodb-query-exporter 9412:9412 &>/dev/null &
-          sleep 2
+          sleep 5
+          curl -v --fail http://localhost:9412/metrics
           curl -v --fail http://localhost:9412/metrics  | grep total_mongodb_users
       - name: Logs
         run: |
