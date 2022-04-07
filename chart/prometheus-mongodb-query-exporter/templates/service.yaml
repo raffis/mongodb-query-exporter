@@ -15,9 +15,9 @@ metadata:
 spec:
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: metrics
+      targetPort: http-metrics
       protocol: TCP
-      name: metrics
+      name: http-metrics
   selector:
     app.kubernetes.io/name: {{ include "prometheus-mongodb-query-exporter.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}

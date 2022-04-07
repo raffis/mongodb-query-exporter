@@ -22,16 +22,16 @@ spec:
         name: exporter
         ports:
           - containerPort: 9412
-            name: metrics
+            name: http-metrics
             protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
-            port: metrics
+            port: http-metrics
         livenessProbe:
           httpGet:
             path: /healthz
-            port: metrics
+            port: http-metrics
         resources:
           limits:
             cpu: 100m

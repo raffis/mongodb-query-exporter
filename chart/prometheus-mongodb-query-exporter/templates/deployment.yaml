@@ -62,7 +62,7 @@ spec:
         {{- toYaml .Values.extraArgs | nindent 8 }}
         {{- end }}
         ports:
-        - name: metrics
+        - name: http-metrics
           containerPort: {{ .Values.port }}
           protocol: TCP
         livenessProbe:
