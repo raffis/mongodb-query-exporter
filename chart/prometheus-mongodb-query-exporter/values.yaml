@@ -127,6 +127,13 @@ envFromSecret: ""
 ##     key: password
 extraEnvSecrets: {}
 
+## A list of environment variables from fieldPath refs that will expose pod information to the container
+## This can be useful for enriching the custom metrics with pod information
+## example:
+## extraEnvFieldPath:
+##   POD_NAME: metadata.name
+extraEnvFieldPath: {}
+
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:

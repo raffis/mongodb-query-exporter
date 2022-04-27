@@ -53,6 +53,12 @@ spec:
         - secretRef:
             name: {{ .Values.envFromSecret }}
         {{- end }}
+        {{- range $key, $value := .Values.extraEnvFieldPath }}
+          - name: {{ $key }}
+            valueFrom:
+              fieldRef:
+                fieldPath: {{ $value }}
+          {{- end }}
         image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
