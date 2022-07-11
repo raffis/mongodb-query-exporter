@@ -3,7 +3,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/raffis/mongodb-query-exporter)](https://goreportcard.com/report/github.com/raffis/mongodb-query-exporter)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/raffis/mongodb-query-exporter?tab=subdirectories)](https://pkg.go.dev/github.com/raffis/mongodb-query-exporter?tab=subdirectories)
 [![Coverage Status](https://coveralls.io/repos/github/raffis/mongodb-query-exporter/badge.svg?branch=master)](https://coveralls.io/github/raffis/mongodb-query-exporter?branch=master)
-[![release](https://img.shields.io/github/release/raffis/mongodb-query-exporter/all.svg)](https://github.com/raffis/mongodb-query-exporter/releases)
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/prometheus-mongodb-query-exporter)](https://artifacthub.io/packages/search?repo=prometheus-mongodb-query-exporter)
 
 MongoDB aggregation query exporter for [Prometheus](https://prometheus.io).
@@ -19,7 +18,7 @@ Note that this is not designed to be a replacement for the [MongoDB exporter](ht
 
 ## Installation
 
-Get Prometheus MongoDB aggregation query exporter, either as a [binary](https://github.com/raffis/mongodb-query-exporter/releases/latest) or packaged as a [Docker image](https://hub.docker.com/r/raffis/mongodb-query-exporter).
+Get Prometheus MongoDB aggregation query exporter, either as a [binary](https://github.com/raffis/mongodb-query-exporter/releases/tag/v1.0.0) from the latest release or packaged as a [Docker image](https://github.com/raffis/mongodb-query-exporter/pkgs/container/mongodb-query-exporter).
 
 ### Helm Chart
 For kubernetes users there is an official helm chart for the MongoDB query exporter.
