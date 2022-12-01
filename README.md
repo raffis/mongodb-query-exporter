@@ -27,7 +27,7 @@ Please read the installation instructions [here](https://github.com/raffis/mongo
 ## Usage
 
 ```
-$ mongodb_query_exporter
+$ mongodb-query-exporter
 ```
 
 Use the `-help` flag to get help information.

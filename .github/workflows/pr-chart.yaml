@@ -26,17 +26,17 @@ jobs:
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          changed=$(ct list-changed --target-branch=main --chart-dirs chart)
+          changed=$(ct list-changed --target-branch=master --chart-dirs chart)
           if [[ -n "$changed" ]]; then
             echo "::set-output name=changed::true"
           fi
 
       - name: Run chart-testing (lint)
-        run: ct lint --target-branch=main --chart-dirs chart
+        run: ct lint --target-branch=master --chart-dirs chart
 
       - name: Create kind cluster
         uses: helm/kind-action@9e8295d178de23cbfbd8fa16cf844eec1d773a07 #v1.4.0
         if: steps.list-changed.outputs.changed == 'true'
 
       - name: Run chart-testing (install)
-        run: ct install --target-branch=main --chart-dirs chart
+        run: ct install --target-branch=master --chart-dirs chart
