@@ -79,14 +79,12 @@ jobs:
           kubectl -n mongodb-system port-forward deployment/mongodb-query-exporter 9412:9412 &>/dev/null &
           sleep 2
           curl -v --fail http://localhost:9412/metrics  | grep total_mongodb_users
-      - name: Logs
-        run: |
-          kubectl -n mongodb-system logs deploy/mongodb-query-exporter
       - name: Debug failure
         if: failure()
         run: |
-          kubectl -n kube-system describe pods
+          kubectl -n mongodb get pods
+          kubectl -n mongodb-system get pods
           kubectl -n mongodb describe pods
           kubectl -n mongodb-system describe pods
-          kubectl -n mongodb-system get all
+          kubectl -n mongodb get svc
           kubectl -n mongodb-system logs deploy/mongodb-query-exporter
