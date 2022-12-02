@@ -64,7 +64,7 @@ jobs:
         run: make deploy-test IMG=test/mongodb-query-exporter:latest
       - name: Setup MongoDB
         env:
-          MONGODB_VER: ${{ '10.29.2' }}
+          MONGODB_VER: ${{ '13.5.0' }}
         run: |
           kubectl create ns mongodb
           helm repo add bitnami https://charts.bitnami.com/bitnami
