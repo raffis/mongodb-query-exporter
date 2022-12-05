@@ -76,6 +76,7 @@ jobs:
           --set image.tag=${{matrix.mongodb}}
       - name: Run tests
         run: |
+          sleep 5
           kubectl -n mongodb-system port-forward deployment/mongodb-query-exporter 9412:9412 &>/dev/null &
           sleep 2
           curl -v --fail http://localhost:9412/metrics  | grep total_mongodb_users
@@ -87,4 +88,5 @@ jobs:
           kubectl -n mongodb describe pods
           kubectl -n mongodb-system describe pods
           kubectl -n mongodb get svc
+          kubectl -n kube-system get pods
           kubectl -n mongodb-system logs deploy/mongodb-query-exporter
