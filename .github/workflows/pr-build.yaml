@@ -1,11 +1,11 @@
-name: e2e
+name: pr-build
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
-      - release-v1.0
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
   build:
@@ -15,20 +15,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f #v3.3.1
         with:
-          go-version: 1.17.x
+          go-version: 1.18.x
       - name: Restore Go cache
-        uses: actions/cache@v1
+        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 #v3.0.11
         with:
-          path: /home/runner/work/_temp/_github_home/go/pkg/mod
+          path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Setup Kubernetes
-        uses: engineerd/setup-kind@v0.5.0
+        uses: engineerd/setup-kind@aa272fe2a7309878ffc2a81c56cfe3ef108ae7d0 #v0.5.0
         with:
           version: v0.11.1
           image: kindest/node:v1.21.1@sha256:69860bda5563ac81e3c0057d654b5253219618a22ec3a346306239bba8cfa1a6
@@ -64,7 +64,7 @@ jobs:
         run: make deploy-test IMG=test/mongodb-query-exporter:latest
       - name: Setup MongoDB
         env:
-          MONGODB_VER: ${{ '10.29.2' }}
+          MONGODB_VER: ${{ '13.5.0' }}
         run: |
           kubectl create ns mongodb
           helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -76,17 +76,17 @@ jobs:
           --set image.tag=${{matrix.mongodb}}
       - name: Run tests
         run: |
+          sleep 5
           kubectl -n mongodb-system port-forward deployment/mongodb-query-exporter 9412:9412 &>/dev/null &
           sleep 2
           curl -v --fail http://localhost:9412/metrics  | grep total_mongodb_users
-      - name: Logs
-        run: |
-          kubectl -n mongodb-system logs deploy/mongodb-query-exporter
       - name: Debug failure
         if: failure()
         run: |
-          kubectl -n kube-system describe pods
+          kubectl -n mongodb get pods
+          kubectl -n mongodb-system get pods
           kubectl -n mongodb describe pods
           kubectl -n mongodb-system describe pods
-          kubectl -n mongodb-system get all
+          kubectl -n mongodb get svc
+          kubectl -n kube-system get pods
           kubectl -n mongodb-system logs deploy/mongodb-query-exporter

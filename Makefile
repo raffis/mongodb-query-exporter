@@ -53,7 +53,7 @@ vet:
 
 build:
 	@echo ">> building binaries"
-	go build -o mongodb_query_exporter main.go
+	go build -o mongodb-query-exporter main.go
 
 .PHONY: run
 run: fmt vet

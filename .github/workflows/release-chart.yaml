@@ -10,18 +10,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3
         with:
           fetch-depth: 0
 
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      - name: Install Helm
+        uses: azure/setup-helm@f382f75448129b3be48f8121b9857be18d815a82 #v3.4
 
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.3.0
+      - name: Install yq
+        uses: chrisdickinson/setup-yq@3d931309f27270ebbafd53f2daee773a82ea1822  #v1.0.1
         with:
-          charts_dir: ./chart
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          yq-version: v4.24.5
+
+      - name: Login to Github Container Registry using helm
+        run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+
+      - name: Package helm charts
+        run: |
+          chartVersion=$(helm show chart chart/mongodb-query-exporter | yq e '.version')
+          appVersion=$(helm show chart chart/mongodb-query-exporter | yq e '.version')
+          helm package chart/mongodb-query-exporter --version=$chartVersion --app-version=$appVersion -d chart
+
+      - name: Publish helm charts to Github Container Registry
+        run: |
+          repository=$(echo "${{ github.repository_owner }}" | tr [:upper:] [:lower:])
+          helm push ${{ github.workspace }}/chart/mongodb-query-exporter-*.tgz oci://ghcr.io/$repository/charts
