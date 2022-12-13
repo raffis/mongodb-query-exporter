@@ -44,7 +44,7 @@ var (
 			//reg := prometheus.NewRegistry()
 			prometheus.MustRegister(c)
 			promCollector = c
-			c.StartCacheInvalidator()
+			_ = c.StartCacheInvalidator()
 			srv = buildHTTPServer(prometheus.DefaultGatherer, conf)
 			err = srv.ListenAndServe()
 
@@ -114,7 +114,7 @@ func buildHTTPServer(reg prometheus.Gatherer, conf config.Config) *http.Server {
 }
 
 func main() {
-	rootCmd.Execute()
+	_ = rootCmd.Execute()
 }
 
 func init() {
@@ -126,18 +126,18 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", config.DefaultBindAddr, "Address to bind http server (default is :9412)")
 	rootCmd.PersistentFlags().StringVarP(&metricsPath, "path", "p", config.DefaultMetricsPath, "Metric path (default is /metrics)")
 	rootCmd.PersistentFlags().DurationVarP(&queryTimeout, "query-timeout", "t", config.DefaultQueryTimeout, "Timeout for MongoDB queries")
-	viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
-	viper.BindPFlag("log.encoding", rootCmd.PersistentFlags().Lookup("log-encoding"))
-	viper.BindPFlag("bind", rootCmd.PersistentFlags().Lookup("bind"))
-	viper.BindPFlag("metricsPath", rootCmd.PersistentFlags().Lookup("path"))
-	viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
-	viper.BindPFlag("mongodb.queryTimeout", rootCmd.PersistentFlags().Lookup("query-timeout"))
-	viper.BindEnv("mongodb.uri", "MDBEXPORTER_MONGODB_URI")
-	viper.BindEnv("global.queryTimeout", "MDBEXPORTER_MONGODB_QUERY_TIMEOUT")
-	viper.BindEnv("log.level", "MDBEXPORTER_LOG_LEVEL")
-	viper.BindEnv("log.encoding", "MDBEXPORTER_LOG_ENCODING")
-	viper.BindEnv("bind", "MDBEXPORTER_BIND")
-	viper.BindEnv("metricsPath", "MDBEXPORTER_METRICSPATH")
+	_ = viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
+	_ = viper.BindPFlag("log.encoding", rootCmd.PersistentFlags().Lookup("log-encoding"))
+	_ = viper.BindPFlag("bind", rootCmd.PersistentFlags().Lookup("bind"))
+	_ = viper.BindPFlag("metricsPath", rootCmd.PersistentFlags().Lookup("path"))
+	_ = viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
+	_ = viper.BindPFlag("mongodb.queryTimeout", rootCmd.PersistentFlags().Lookup("query-timeout"))
+	_ = viper.BindEnv("mongodb.uri", "MDBEXPORTER_MONGODB_URI")
+	_ = viper.BindEnv("global.queryTimeout", "MDBEXPORTER_MONGODB_QUERY_TIMEOUT")
+	_ = viper.BindEnv("log.level", "MDBEXPORTER_LOG_LEVEL")
+	_ = viper.BindEnv("log.encoding", "MDBEXPORTER_LOG_ENCODING")
+	_ = viper.BindEnv("bind", "MDBEXPORTER_BIND")
+	_ = viper.BindEnv("metricsPath", "MDBEXPORTER_METRICSPATH")
 }
 
 func initConfig() {

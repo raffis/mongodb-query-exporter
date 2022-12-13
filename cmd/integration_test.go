@@ -78,7 +78,10 @@ func executeIntegrationTest(t *testing.T, test integrationTest) {
 	container, err := setupMongoDBContainer(context.TODO(), test.mongodbImage)
 	assert.NoError(t, err)
 	opts := options.Client().ApplyURI(container.URI)
-	defer container.Terminate(context.TODO())
+
+	defer func() {
+		assert.NoError(t, container.Terminate(context.TODO()))
+	}()
 
 	client, err := mongo.Connect(context.TODO(), opts)
 	assert.NoError(t, err)
@@ -92,7 +95,10 @@ func executeIntegrationTest(t *testing.T, test integrationTest) {
 	b := bytes.NewBufferString("")
 	rootCmd.SetOut(b)
 	rootCmd.SetArgs(args)
-	go rootCmd.Execute()
+
+	go func() {
+		assert.NoError(t, rootCmd.Execute())
+	}()
 
 	//binding is blocking, do this async but wait 200ms for tcp port to be open
 	time.Sleep(200 * time.Millisecond)
@@ -118,7 +124,7 @@ func executeIntegrationTest(t *testing.T, test integrationTest) {
 	assert.Len(t, test.expectedMetrics, found)
 
 	//tear down http server and unregister collector
-	srv.Shutdown(context.TODO())
+	assert.NoError(t, srv.Shutdown(context.TODO()))
 	prometheus.Unregister(promCollector)
 }
 
@@ -156,40 +162,84 @@ func setupMongoDBContainer(ctx context.Context, image string) (*mongodbContainer
 	return &mongodbContainer{Container: container, URI: uri}, nil
 }
 
+type testRecord struct {
+	document   bson.M
+	database   string
+	collection string
+}
+
 func setupTestData(t *testing.T, client *mongo.Client) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := client.Database("mydb").Collection("objects").InsertOne(ctx, bson.M{
-		"foo": "bar",
-	})
-	assert.NoError(t, err)
+	testData := []testRecord{
+		{
+			database:   "mydb",
+			collection: "objects",
+			document: bson.M{
+				"foo": "bar",
+			},
+		},
+		{
+			database:   "mydb",
+			collection: "objects",
+			document: bson.M{
+				"foo": "foo",
+			},
+		},
+		{
+			database:   "mydb",
+			collection: "queue",
+			document: bson.M{
+				"class":  "foobar",
+				"status": 1,
+			},
+		},
+		{
+			database:   "mydb",
+			collection: "queue",
+			document: bson.M{
+				"class":  "foobar",
+				"status": 1,
+			},
+		},
+		{
+			database:   "mydb",
+			collection: "queue",
+			document: bson.M{
+				"class":  "bar",
+				"status": 2,
+			},
+		},
+		{
+			database:   "mydb",
+			collection: "events",
+			document: bson.M{
+				"type":    "bar",
+				"created": time.Now(),
+			},
+		},
+		{
+			database:   "mydb",
+			collection: "events",
+			document: bson.M{
+				"type":    "bar",
+				"created": time.Now(),
+			},
+		},
+		{
+			database:   "mydb",
+			collection: "events",
+			document: bson.M{
+				"type":    "foo",
+				"created": time.Now(),
+			},
+		},
+	}
 
-	client.Database("mydb").Collection("objects").InsertOne(ctx, bson.M{
-		"foo": "foo",
-	})
-	client.Database("mydb").Collection("queue").InsertOne(ctx, bson.M{
-		"class":  "foobar",
-		"status": 1,
-	})
-	client.Database("mydb").Collection("queue").InsertOne(ctx, bson.M{
-		"class":  "foobar",
-		"status": 1,
-	})
-	client.Database("mydb").Collection("queue").InsertOne(ctx, bson.M{
-		"class":  "bar",
-		"status": 2,
-	})
-	client.Database("mydb").Collection("events").InsertOne(ctx, bson.M{
-		"type":    "bar",
-		"created": time.Now(),
-	})
-	client.Database("mydb").Collection("events").InsertOne(ctx, bson.M{
-		"type":    "bar",
-		"created": time.Now(),
-	})
-	client.Database("mydb").Collection("events").InsertOne(ctx, bson.M{
-		"type":    "foo",
-		"created": time.Now(),
-	})
+	for _, record := range testData {
+		_, err := client.Database(record.database).Collection(record.collection).InsertOne(ctx, record.document)
+		assert.NoError(t, err)
+	}
+
 }

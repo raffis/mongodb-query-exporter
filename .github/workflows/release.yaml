@@ -18,9 +18,9 @@ jobs:
         uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b #v3
       - uses: actions/setup-go@d0a58c1c4d2b25278816e339b944508c875f3613 #v3.4.0
         with:
-          go-version: '1.18'
+          go-version: '1.19'
       - name: Docker Login
-        uses: docker/login-action@v2
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a #v2.1.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -36,4 +36,3 @@ jobs:
           args: release --rm-dist --skip-validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
