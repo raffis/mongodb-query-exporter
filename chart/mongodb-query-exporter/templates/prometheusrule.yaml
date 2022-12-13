@@ -3,8 +3,8 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
 metadata:
-  name: {{ template "prometheus-mongodb-query-exporter.fullname" . }}
-  {{- $labels := merge ( include "prometheus-mongodb-query-exporter.labels" . | fromYaml) .Values.prometheusRule.labels -}} 
+  name: {{ template "mongodb-query-exporter.fullname" . }}
+  {{- $labels := merge ( include "mongodb-query-exporter.labels" . | fromYaml) .Values.prometheusRule.labels -}} 
   {{- with $labels }}
   labels:
     {{- toYaml . | nindent 4 }}
@@ -19,7 +19,7 @@ metadata:
 spec:
 {{- with .Values.prometheusRule.rules }}
   groups:
-    - name: {{ template "prometheus-mongodb-query-exporter.name" $ }}
+    - name: {{ template "mongodb-query-exporter.name" $ }}
       rules: {{ tpl (toYaml .) $ | nindent 8 }}
 {{- end }}
 {{- end }}

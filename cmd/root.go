@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"fmt"
@@ -32,7 +32,7 @@ var (
 	promCollector *collector.Collector
 
 	rootCmd = &cobra.Command{
-		Use:   "mongodb_query_exporter",
+		Use:   "mongodb-query-exporter",
 		Short: "MongoDB aggregation exporter for prometheus",
 		Long:  `Export aggregations from MongoDB as prometheus metrics.`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -113,9 +113,8 @@ func buildHTTPServer(reg prometheus.Gatherer, conf config.Config) *http.Server {
 	return &srv
 }
 
-// Executes the root command.
-func Execute() error {
-	return rootCmd.Execute()
+func main() {
+	rootCmd.Execute()
 }
 
 func init() {

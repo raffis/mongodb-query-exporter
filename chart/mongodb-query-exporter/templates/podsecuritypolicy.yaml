@@ -2,8 +2,8 @@
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: {{ template "prometheus-mongodb-query-exporter.fullname" . }}
-  {{- with ( include "prometheus-mongodb-query-exporter.labels" . ) }}
+  name: {{ template "mongodb-query-exporter.fullname" . }}
+  {{- with ( include "mongodb-query-exporter.labels" . ) }}
   labels:
     {{- . }}
   {{- end }}
