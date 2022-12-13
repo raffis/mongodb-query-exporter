@@ -18,11 +18,11 @@ Note that this is not designed to be a replacement for the [MongoDB exporter](ht
 
 ## Installation
 
-Get Prometheus MongoDB aggregation query exporter, either as a [binary](https://github.com/raffis/mongodb-query-exporter/releases/tag/v1.0.0) from the latest release or packaged as a [Docker image](https://github.com/raffis/mongodb-query-exporter/pkgs/container/mongodb-query-exporter).
+Get Prometheus MongoDB aggregation query exporter, either as a binaray from the latest release or packaged as a [Docker image](https://github.com/raffis/mongodb-query-exporter/pkgs/container/mongodb-query-exporter).
 
 ### Helm Chart
 For kubernetes users there is an official helm chart for the MongoDB query exporter.
-Please read the installation instructions [here](https://github.com/raffis/mongodb-query-exporter/blob/master/chart/prometheus-mongodb-query-exporter/README.md).
+Please read the installation instructions [here](https://github.com/raffis/mongodb-query-exporter/blob/master/chart/mongodb-query-exporter/README.md).
 
 ## Usage
 

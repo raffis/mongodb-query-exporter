@@ -32,7 +32,7 @@ var (
 	promCollector *collector.Collector
 
 	rootCmd = &cobra.Command{
-		Use:   "mongodb_query_exporter",
+		Use:   "mongodb-query-exporter",
 		Short: "MongoDB aggregation exporter for prometheus",
 		Long:  `Export aggregations from MongoDB as prometheus metrics.`,
 		Run: func(cmd *cobra.Command, args []string) {
