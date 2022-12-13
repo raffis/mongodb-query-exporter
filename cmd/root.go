@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"fmt"
@@ -113,9 +113,8 @@ func buildHTTPServer(reg prometheus.Gatherer, conf config.Config) *http.Server {
 	return &srv
 }
 
-// Executes the root command.
-func Execute() error {
-	return rootCmd.Execute()
+func main() {
+	rootCmd.Execute()
 }
 
 func init() {
