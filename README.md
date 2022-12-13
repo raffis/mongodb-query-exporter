@@ -24,6 +24,12 @@ Get Prometheus MongoDB aggregation query exporter, either as a binaray from the 
 For kubernetes users there is an official helm chart for the MongoDB query exporter.
 Please read the installation instructions [here](https://github.com/raffis/mongodb-query-exporter/blob/master/chart/mongodb-query-exporter/README.md).
 
+### Docker
+You can run the exporter using docker (This will start it using the example config provided in the example folder):
+```sh
+docker run -e MDBEXPORTER_CONFIG=/config/configv3.yaml -v $(pwd)/example:/config ghcr.io/raffis/mongodb-query-exporter:latest
+```
+
 ## Usage
 
 ```

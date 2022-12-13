@@ -152,14 +152,12 @@ func initConfig() {
 	} else {
 		// Find home directory.
 		usr, err := user.Current()
-		if err != nil {
-			panic(err)
+		if err == nil {
+			viper.AddConfigPath(usr.HomeDir + "/.mongodb_query_exporter")
 		}
 
 		// System wide config
 		viper.AddConfigPath("/etc/mongodb_query_exporter")
-		// Search config in home directory with name ".mongodb_query_exporter" (without extension).
-		viper.AddConfigPath(usr.HomeDir + "/.mongodb_query_exporter")
 	}
 
 	viper.SetConfigType("yaml")
