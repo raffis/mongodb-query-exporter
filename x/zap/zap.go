@@ -33,7 +33,7 @@ func NewConfig() Config {
 // Initializes zap logger with environment variable configuration LOG_LEVEL and LOG_FORMAT.
 func New(config Config) (*zap.Logger, error) {
 	var c zap.Config
-	if config.Development == true {
+	if config.Development {
 		c = zap.NewDevelopmentConfig()
 		c.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	} else {
@@ -58,6 +58,9 @@ func New(config Config) (*zap.Logger, error) {
 		return nil, err
 	}
 
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync()
+	}()
+
 	return logger, nil
 }

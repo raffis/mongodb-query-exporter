@@ -18,7 +18,7 @@ func TestBuild(t *testing.T) {
 		}
 	})
 
-	t.Run("Changed bind adress is correct", func(t *testing.T) {
+	t.Run("Changed bind address is correct", func(t *testing.T) {
 		var conf = &Config{
 			LogLevel: "error",
 			Bind:     ":2222",

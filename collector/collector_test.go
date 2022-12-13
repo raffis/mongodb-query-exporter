@@ -157,7 +157,7 @@ func TestInitializeMetrics(t *testing.T) {
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
 					&Metric{
-						Name:          "simple_gauge_value_not_found_overriden",
+						Name:          "simple_gauge_value_not_found_overridden",
 						Type:          "gauge",
 						Help:          "overridden",
 						OverrideEmpty: true,
@@ -167,9 +167,9 @@ func TestInitializeMetrics(t *testing.T) {
 				Pipeline: "[{\"$match\":{\"foo\":\"bar\"}}]",
 			},
 			expected: `
-				# HELP simple_gauge_value_not_found_overriden overridden
-				# TYPE simple_gauge_value_not_found_overriden gauge
-				simple_gauge_value_not_found_overriden 12
+				# HELP simple_gauge_value_not_found_overridden overridden
+				# TYPE simple_gauge_value_not_found_overridden gauge
+				simple_gauge_value_not_found_overridden 12
 			`,
 		},
 		aggregationTest{

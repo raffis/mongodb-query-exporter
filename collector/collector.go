@@ -19,7 +19,6 @@ type Collector struct {
 	servers      []*server
 	logger       Logger
 	config       *Config
-	metrics      []*Metric
 	aggregations []*Aggregation
 	counter      *prometheus.CounterVec
 	cache        map[string]*cacheEntry
@@ -59,7 +58,6 @@ type Aggregation struct {
 	Pipeline   string
 	Metrics    []*Metric
 	pipeline   bson.A
-	validUntil time.Time
 }
 
 // A metric defines how a certain value is exported from a MongoDB aggregation
@@ -91,7 +89,7 @@ const (
 	ModePull = "pull"
 	//Push mode (Uses changestream which is only supported with MongoDB >= 3.6)
 	ModePush = "push"
-	//Metric generated succesfully
+	//Metric generated successfully
 	ResultSuccess = "SUCCESS"
 	//Metric value could not been determined
 	ResultError = "ERROR"
@@ -445,18 +443,17 @@ func createMetric(metric *Metric, result AggregationResult) (prometheus.Metric, 
 
 func (metric *Metric) getValue(result AggregationResult) (float64, error) {
 	if val, ok := result[metric.Value]; ok {
-		switch val.(type) {
+		switch v := val.(type) {
 		case float32:
-			value := float64(val.(float32))
+			value := float64(v)
 			return value, nil
 		case float64:
-			value := val.(float64)
-			return value, nil
+			return v, nil
 		case int32:
-			value := float64(val.(int32))
+			value := float64(v)
 			return value, nil
 		case int64:
-			value := float64(val.(int64))
+			value := float64(v)
 			return value, nil
 		default:
 			return 0, fmt.Errorf("provided value taken from the aggregation result has to be a number, type %T given", val)
@@ -471,9 +468,9 @@ func (metric *Metric) getLabels(result AggregationResult) ([]string, error) {
 
 	for _, label := range metric.Labels {
 		if val, ok := result[label]; ok {
-			switch val.(type) {
+			switch v := val.(type) {
 			case string:
-				labels = append(labels, val.(string))
+				labels = append(labels, v)
 			default:
 				return labels, fmt.Errorf("provided label value taken from the aggregation result has to be a string, type %T given", val)
 			}

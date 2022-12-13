@@ -22,8 +22,14 @@ integrations    := $(shell $(GO) list ./... | grep cmd)
 PREFIX              ?= $(shell pwd)
 BIN_DIR             ?= $(shell pwd)
 
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
 
-all: deps vet fmt test build
+all: deps vet fmt lint test build
 
 style:
 	@echo ">> checking code style"
@@ -38,6 +44,15 @@ unittest:
 integrationtest:
 	@echo ">> running integration tests"
 	@$(GO) test -short -race -v  $(integrations)
+
+GOLANGCI_LINT = $(GOBIN)/golangci-lint
+.PHONY: golangci-lint
+golangci-lint: ## Download golint locally if necessary
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
+
+.PHONY: lint
+lint: golangci-lint ## Run golangci-lint against code
+	$(GOLANGCI_LINT) run ./...
 
 deps:
 	@echo ">> install dependencies"
@@ -86,3 +101,16 @@ undeploy-test: ## Undeploy exporter from the K8s cluster specified in ~/.kube/co
 	$(KUSTOMIZE) build config/test | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: all style fmt build test vet
+
+# go-install-tool will 'go install' any package $2 and install it to $1
+define go-install-tool
+@[ -f $(1) ] || { \
+set -e ;\
+TMP_DIR=$$(mktemp -d) ;\
+cd $$TMP_DIR ;\
+go mod init tmp ;\
+echo "Downloading $(2)" ;\
+env -i bash -c "GOBIN=$(GOBIN) PATH=$(PATH) GOPATH=$(shell go env GOPATH) GOCACHE=$(shell go env GOCACHE) go install $(2)" ;\
+rm -rf $$TMP_DIR ;\
+}
+endef
