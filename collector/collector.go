@@ -91,7 +91,7 @@ const (
 	ModePull = "pull"
 	//Push mode (Uses changestream which is only supported with MongoDB >= 3.6)
 	ModePush = "push"
-	//Metric generated succesfully
+	//Metric generated successfully
 	ResultSuccess = "SUCCESS"
 	//Metric value could not been determined
 	ResultError = "ERROR"

@@ -16,7 +16,7 @@ func TestBuild(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("Changed bind adress is correct", func(t *testing.T) {
+	t.Run("Changed bind address is correct", func(t *testing.T) {
 		var conf = &Config{
 			Log: zap.Config{
 				Encoding: "console",
