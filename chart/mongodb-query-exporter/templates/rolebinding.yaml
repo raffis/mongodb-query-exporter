@@ -2,8 +2,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ template "prometheus-mongodb-query-exporter.fullname" . }}
-  {{- with ( include "prometheus-mongodb-query-exporter.labels" . ) }}
+  name: {{ template "mongodb-query-exporter.fullname" . }}
+  {{- with ( include "mongodb-query-exporter.labels" . ) }}
   labels:
     {{- . }}
   {{- end }}
@@ -14,11 +14,11 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ template "prometheus-mongodb-query-exporter.fullname" . }}
+  name: {{ template "mongodb-query-exporter.fullname" . }}
 subjects:
 - kind: ServiceAccount
   {{- if .Values.serviceAccount.create  }}
-  name: {{ template "prometheus-mongodb-query-exporter.fullname" . }}
+  name: {{ template "mongodb-query-exporter.fullname" . }}
   {{- else }}
   name: {{ .Values.serviceAccount.name }}
   {{- end }}

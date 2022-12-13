@@ -1,4 +1,4 @@
-# Prometheus MongoDB Exporter
+# MongoDB Exporter
 
 Installs the [MongoDB Query Exporter](https://github.com/raffis/mongodb-query-exporter) for [Prometheus](https://prometheus.io/).
 
@@ -36,5 +36,5 @@ podAnnotations:
 See Customizing the Chart Before Installing. To see all configurable options with detailed comments, visit the chart's values.yaml, or run the configuration command:
 
 ```sh
-$ helm show values prometheus-mongodb-query-exporter/prometheus-mongodb-query-exporter
+$ helm show values oci://ghcr.io/raffis/charts/mongodb-query-exporter
 ```

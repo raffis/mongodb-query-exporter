@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"fmt"
@@ -32,7 +32,7 @@ var (
 	promCollector *collector.Collector
 
 	rootCmd = &cobra.Command{
-		Use:   "mongodb_query_exporter",
+		Use:   "mongodb-query-exporter",
 		Short: "MongoDB aggregation exporter for prometheus",
 		Long:  `Export aggregations from MongoDB as prometheus metrics.`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -113,9 +113,8 @@ func buildHTTPServer(reg prometheus.Gatherer, conf config.Config) *http.Server {
 	return &srv
 }
 
-// Executes the root command.
-func Execute() error {
-	return rootCmd.Execute()
+func main() {
+	rootCmd.Execute()
 }
 
 func init() {
@@ -161,10 +160,9 @@ func initConfig() {
 		viper.AddConfigPath("/etc/mongodb_query_exporter")
 		// Search config in home directory with name ".mongodb_query_exporter" (without extension).
 		viper.AddConfigPath(usr.HomeDir + "/.mongodb_query_exporter")
-		//config file name without extension
-		//	viper.SetConfigName("config")
 	}
 
+	viper.SetConfigType("yaml")
 	if err := viper.ReadInConfig(); err != nil {
 		panic(err)
 	}

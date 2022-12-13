@@ -53,11 +53,11 @@ vet:
 
 build:
 	@echo ">> building binaries"
-	go build -o mongodb-query-exporter main.go
+	go build -o mongodb-query-exporter cmd/root.go
 
 .PHONY: run
 run: fmt vet
-	go run ./main.go
+	go run ./cmd/root.go
 
 .PHONY: docker-build
 docker-build: test ## Build docker image with the manager.

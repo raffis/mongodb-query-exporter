@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "prometheus-mongodb-query-exporter.name" -}}
+{{- define "mongodb-query-exporter.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -11,7 +11,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "prometheus-mongodb-query-exporter.fullname" -}}
+{{- define "mongodb-query-exporter.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -27,16 +27,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "prometheus-mongodb-query-exporter.chart" -}}
+{{- define "mongodb-query-exporter.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "prometheus-mongodb-query-exporter.serviceAccountName" -}}
+{{- define "mongodb-query-exporter.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create -}}
-    {{ default (include "prometheus-mongodb-query-exporter.fullname" .) .Values.serviceAccount.name }}
+    {{ default (include "mongodb-query-exporter.fullname" .) .Values.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
@@ -45,22 +45,22 @@ Create the name of the service account to use
 {{/*
 Determine secret name, can either be the self-created of an existing one
 */}}
-{{- define "prometheus-mongodb-query-exporter.secretName" -}}
+{{- define "mongodb-query-exporter.secretName" -}}
 {{- if .Values.existingSecret.name -}}
     {{- .Values.existingSecret.name -}}
 {{- else -}}
-    {{ include "prometheus-mongodb-query-exporter.fullname" . }}
+    {{ include "mongodb-query-exporter.fullname" . }}
 {{- end -}}
 {{- end -}}
 
 {{/*
 Determine configmap name, can either be the self-created of an existing one
 */}}
-{{- define "prometheus-mongodb-query-exporter.configName" -}}
+{{- define "mongodb-query-exporter.configName" -}}
 {{- if .Values.existingConfig.name -}}
     {{- .Values.existingConfig.name -}}
 {{- else -}}
-    {{ include "prometheus-mongodb-query-exporter.fullname" . }}
+    {{ include "mongodb-query-exporter.fullname" . }}
 {{- end -}}
 {{- end -}}
 
@@ -68,11 +68,11 @@ Determine configmap name, can either be the self-created of an existing one
 {{/*
 Common labels
 */}}
-{{- define "prometheus-mongodb-query-exporter.labels" -}}{{- if .Values.chartLabels }}
-    app.kubernetes.io/name: {{ include "prometheus-mongodb-query-exporter.name" . }}
+{{- define "mongodb-query-exporter.labels" -}}{{- if .Values.chartLabels }}
+    app.kubernetes.io/name: {{ include "mongodb-query-exporter.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    helm.sh/chart: {{ include "prometheus-mongodb-query-exporter.chart" . }}
+    helm.sh/chart: {{ include "mongodb-query-exporter.chart" . }}
 {{- end -}}
 {{- with .Values.labels }}
     {{ . | toYaml }}

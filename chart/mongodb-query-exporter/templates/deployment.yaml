@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "prometheus-mongodb-query-exporter.fullname" . }}
-  {{- with ( include "prometheus-mongodb-query-exporter.labels" . ) }}
+  name: {{ include "mongodb-query-exporter.fullname" . }}
+  {{- with ( include "mongodb-query-exporter.labels" . ) }}
   labels:
     {{- . }}
   {{- end }}
@@ -14,7 +14,7 @@ spec:
   replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "prometheus-mongodb-query-exporter.name" . }}
+      app.kubernetes.io/name: {{ include "mongodb-query-exporter.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
@@ -25,15 +25,15 @@ spec:
           {{- toYaml .Values.podAnnotations | nindent 8 }}
         {{- end }}
       labels:
-        app.kubernetes.io/name: {{ include "prometheus-mongodb-query-exporter.name" . }}
+        app.kubernetes.io/name: {{ include "mongodb-query-exporter.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
-      serviceAccountName: {{ template "prometheus-mongodb-query-exporter.serviceAccountName" . }}
+      serviceAccountName: {{ template "mongodb-query-exporter.serviceAccountName" . }}
       containers:
       - name: mongodb-query-exporter
         envFrom:
         - secretRef:
-            name: {{ include "prometheus-mongodb-query-exporter.secretName" . }}
+            name: {{ include "mongodb-query-exporter.secretName" . }}
         env:
         {{- if .Values.env }}
         {{- range $key, $value := .Values.env }}
@@ -95,7 +95,7 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: {{ include "prometheus-mongodb-query-exporter.configName" . }}
+          name: {{ include "mongodb-query-exporter.configName" . }}
       {{- range .Values.secretMounts }}
       - name: {{ .name }}
         secret:
