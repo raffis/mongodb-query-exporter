@@ -160,10 +160,9 @@ func initConfig() {
 		viper.AddConfigPath("/etc/mongodb_query_exporter")
 		// Search config in home directory with name ".mongodb_query_exporter" (without extension).
 		viper.AddConfigPath(usr.HomeDir + "/.mongodb_query_exporter")
-		//config file name without extension
-		//	viper.SetConfigName("config")
 	}
 
+	viper.SetConfigType("yaml")
 	if err := viper.ReadInConfig(); err != nil {
 		panic(err)
 	}
