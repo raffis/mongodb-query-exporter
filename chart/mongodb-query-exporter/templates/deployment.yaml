@@ -81,7 +81,7 @@ spec:
           {{- toYaml .Values.securityContext | nindent 10 }}
         volumeMounts:
         - name: config
-          mountPath: /etc/mongodb-query-exporter
+          mountPath: /etc/mongodb_query_exporter
         {{- range .Values.secretMounts }}
         - name: {{ .name }}
           mountPath: {{ .path }}
