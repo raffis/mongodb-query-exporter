@@ -5,4 +5,4 @@ resources:
 - namespace.yaml
 images:
 - name: raffis/mongodb-query-exporter:latest
-  newTag: v2.0.0
+  newTag: 2.0.1
