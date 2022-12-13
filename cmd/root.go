@@ -153,7 +153,7 @@ func initConfig() {
 		// Find home directory.
 		usr, err := user.Current()
 		if err == nil {
-		  viper.AddConfigPath(usr.HomeDir + "/.mongodb_query_exporter")
+			viper.AddConfigPath(usr.HomeDir + "/.mongodb_query_exporter")
 		}
 
 		// System wide config
