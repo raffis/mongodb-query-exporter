@@ -2,8 +2,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "prometheus-mongodb-query-exporter.configName" . }}
-  {{- with ( include "prometheus-mongodb-query-exporter.labels" . ) }}
+  name: {{ include "mongodb-query-exporter.configName" . }}
+  {{- with ( include "mongodb-query-exporter.labels" . ) }}
   labels:
     {{- . }}
   {{- end }}

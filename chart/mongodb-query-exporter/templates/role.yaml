@@ -2,8 +2,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ template "prometheus-mongodb-query-exporter.fullname" . }}
-  {{- with ( include "prometheus-mongodb-query-exporter.labels" . ) }}
+  name: {{ template "mongodb-query-exporter.fullname" . }}
+  {{- with ( include "mongodb-query-exporter.labels" . ) }}
   labels:
     {{- . }}
   {{- end }}
@@ -16,5 +16,5 @@ rules:
   resources: ['podsecuritypolicies']
   verbs:     ['use']
   resourceNames:
-  - {{ template "prometheus-mongodb-query-exporter.fullname" . }}
+  - {{ template "mongodb-query-exporter.fullname" . }}
 {{- end }}

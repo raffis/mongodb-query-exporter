@@ -2,8 +2,8 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "prometheus-mongodb-query-exporter.fullname" . }}
-  {{- $labels := merge ( include "prometheus-mongodb-query-exporter.labels" . | fromYaml) .Values.service.labels -}}
+  name: {{ include "mongodb-query-exporter.fullname" . }}
+  {{- $labels := merge ( include "mongodb-query-exporter.labels" . | fromYaml) .Values.service.labels -}}
   {{- with $labels }}
   labels:
     {{- toYaml . | nindent 4 }}
@@ -19,7 +19,7 @@ spec:
       protocol: TCP
       name: metrics
   selector:
-    app.kubernetes.io/name: {{ include "prometheus-mongodb-query-exporter.name" . }}
+    app.kubernetes.io/name: {{ include "mongodb-query-exporter.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
   type: {{ .Values.service.type }}
 {{- end }}
