@@ -59,7 +59,7 @@ spec:
               fieldRef:
                 fieldPath: {{ $value }}
           {{- end }}
-        image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
         - --bind={{ printf ":%s" .Values.port }}
