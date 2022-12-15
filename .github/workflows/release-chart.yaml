@@ -17,19 +17,12 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 #v3.5
 
-      - name: Install yq
-        uses: chrisdickinson/setup-yq@3d931309f27270ebbafd53f2daee773a82ea1822  #v1.0.1
-        with:
-          yq-version: v4.24.5
-
       - name: Login to Github Container Registry using helm
         run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
 
       - name: Package helm charts
         run: |
-          chartVersion=$(helm show chart chart/mongodb-query-exporter | yq e '.version')
-          appVersion=$(helm show chart chart/mongodb-query-exporter | yq e '.version')
-          helm package chart/mongodb-query-exporter --version=$chartVersion --app-version=$appVersion -d chart
+          helm package chart/mongodb-query-exporter -d chart
 
       - name: Publish helm charts to Github Container Registry
         run: |
