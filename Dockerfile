@@ -8,8 +8,6 @@ RUN make deps build
 
 FROM gcr.io/distroless/base
 COPY --from=builder /go/src/github.com/raffis/mongodb-query-exporter/mongodb-query-exporter /bin/mongodb-query-exporter
-
-ENV MDBEXPORTER_CONFIG /etc/mongodb-query-exporter/config.yaml
 USER 1000:1000
 
 EXPOSE      9412
