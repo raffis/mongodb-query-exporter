@@ -157,6 +157,7 @@ func initConfig() {
 		}
 
 		// System wide config
+		viper.AddConfigPath("/etc/mongodb-query-exporter")
 		viper.AddConfigPath("/etc/mongodb_query_exporter")
 	}
 
