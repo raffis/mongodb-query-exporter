@@ -2,7 +2,7 @@ project_name: mongodb-query-exporter
 
 builds:
 - id: cli
-  main: cmd/root.go
+  main: cmd/main.go
   binary: mongodb-query-exporter
   goos:
   - linux
