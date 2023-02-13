@@ -22,7 +22,7 @@ require (
 	github.com/spf13/viper v1.14.0
 	github.com/testcontainers/testcontainers-go v0.12.0
 	github.com/tj/assert v0.0.3
-	go.mongodb.org/mongo-driver v1.11.1
+	go.mongodb.org/mongo-driver v1.11.2
 	go.uber.org/zap v1.24.0
 	golang.org/x/net v0.0.0-20221014081412-f15817d10f9b // indirect
 	golang.org/x/sys v0.0.0-20220908164124-27713097b956 // indirect
