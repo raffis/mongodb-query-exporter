@@ -10,7 +10,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/matttproud/golang_protobuf_extensions v1.0.2 // indirect
-	github.com/opencontainers/image-spec v1.0.1 // indirect
+	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/opencontainers/runc v1.0.2 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
