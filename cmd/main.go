@@ -8,11 +8,11 @@ import (
 	"os/user"
 	"time"
 
-	"github.com/raffis/mongodb-query-exporter/collector"
-	"github.com/raffis/mongodb-query-exporter/config"
-	v1 "github.com/raffis/mongodb-query-exporter/config/v1"
-	v2 "github.com/raffis/mongodb-query-exporter/config/v2"
-	v3 "github.com/raffis/mongodb-query-exporter/config/v3"
+	"github.com/raffis/mongodb-query-exporter/v2/collector"
+	"github.com/raffis/mongodb-query-exporter/v2/config"
+	v1 "github.com/raffis/mongodb-query-exporter/v2/config/v1"
+	v2 "github.com/raffis/mongodb-query-exporter/v2/config/v2"
+	v3 "github.com/raffis/mongodb-query-exporter/v2/config/v3"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
