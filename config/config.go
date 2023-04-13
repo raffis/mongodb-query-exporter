@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/raffis/mongodb-query-exporter/collector"
+	"github.com/raffis/mongodb-query-exporter/v2/collector"
 )
 
 // Config defaults

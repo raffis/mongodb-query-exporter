@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/raffis/mongodb-query-exporter/collector"
-	"github.com/raffis/mongodb-query-exporter/config"
-	"github.com/raffis/mongodb-query-exporter/x/zap"
+	"github.com/raffis/mongodb-query-exporter/v2/collector"
+	"github.com/raffis/mongodb-query-exporter/v2/config"
+	"github.com/raffis/mongodb-query-exporter/v2/x/zap"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
 )

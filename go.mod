@@ -1,4 +1,4 @@
-module github.com/raffis/mongodb-query-exporter
+module github.com/raffis/mongodb-query-exporter/v2
 
 go 1.19
 
