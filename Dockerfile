@@ -1,4 +1,4 @@
-FROM golang:1.19 as builder
+FROM golang:1.20 as builder
 
 ADD .   /go/src/github.com/raffis/mongodb-query-exporter
 WORKDIR /go/src/github.com/raffis/mongodb-query-exporter
