@@ -1,4 +1,4 @@
-name: Lint and Test Charts
+name: pr-chart
 
 on: pull_request
 
