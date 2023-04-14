@@ -58,6 +58,7 @@ jobs:
           path: exporter-container.tar        
 
   e2e-tests:
+    needs: [build]
     strategy:
       matrix:
         mongodb: ["4.4", "5.0"]
