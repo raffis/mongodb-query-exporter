@@ -6,7 +6,7 @@ WORKDIR /go/src/github.com/raffis/mongodb-query-exporter
 
 RUN make deps build
 
-FROM gcr.io/distroless/base
+FROM gcr.io/distroless/static:nonroot
 COPY --from=builder /go/src/github.com/raffis/mongodb-query-exporter/mongodb-query-exporter /bin/mongodb-query-exporter
 USER 1000:1000
 
