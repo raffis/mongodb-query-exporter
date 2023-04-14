@@ -18,4 +18,4 @@ jobs:
       - name: Automatic Rebase
         uses: cirrus-actions/rebase@b87d48154a87a85666003575337e27b8cd65f691 # 1.8
         env:
-          GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}

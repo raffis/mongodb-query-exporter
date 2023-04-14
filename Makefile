@@ -48,7 +48,7 @@ integrationtest:
 GOLANGCI_LINT = $(GOBIN)/golangci-lint
 .PHONY: golangci-lint
 golangci-lint: ## Download golint locally if necessary
-	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.2)
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint against code
@@ -68,14 +68,14 @@ vet:
 
 build:
 	@echo ">> building binaries"
-	go build -o mongodb-query-exporter cmd/main.go
+	CGO_ENABLED=0 go build -o mongodb-query-exporter cmd/main.go
 
 .PHONY: run
 run: fmt vet
 	go run ./cmd/main.go
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
+docker-build: build ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 .PHONY: docker-push

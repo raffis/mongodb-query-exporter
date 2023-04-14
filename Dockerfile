@@ -1,14 +1,6 @@
-FROM golang:1.20 as builder
-
-ADD .   /go/src/github.com/raffis/mongodb-query-exporter
-WORKDIR /go/src/github.com/raffis/mongodb-query-exporter
-
-
-RUN make deps build
-
-FROM gcr.io/distroless/base
-COPY --from=builder /go/src/github.com/raffis/mongodb-query-exporter/mongodb-query-exporter /bin/mongodb-query-exporter
-USER 1000:1000
-
+FROM gcr.io/distroless/static:nonroot
+WORKDIR /
+COPY mongodb-query-exporter mongodb-query-exporter
 EXPOSE      9412
-ENTRYPOINT [ "/bin/mongodb-query-exporter" ]
+
+ENTRYPOINT ["/mongodb-query-exporter"]

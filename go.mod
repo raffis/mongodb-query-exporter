@@ -1,6 +1,6 @@
 module github.com/raffis/mongodb-query-exporter/v2
 
-go 1.19
+go 1.20
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect

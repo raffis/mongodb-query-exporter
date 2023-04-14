@@ -36,7 +36,7 @@ sboms:
 dockers:
 - image_templates:
   - ghcr.io/raffis/{{ .ProjectName }}:{{ .Version }}-amd64
-  dockerfile: Dockerfile.release
+  dockerfile: Dockerfile
   use: buildx
   ids:
   - cli
@@ -53,7 +53,7 @@ dockers:
 - image_templates: 
   - "ghcr.io/raffis/{{ .ProjectName }}:{{ .Version }}-arm64v8"
   goarch: arm64
-  dockerfile: Dockerfile.release
+  dockerfile: Dockerfile
   use: buildx
   ids:
   - cli
