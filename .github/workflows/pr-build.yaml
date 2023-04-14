@@ -50,7 +50,7 @@ jobs:
           make docker-build
       - name: Create image tarball
         run: |
-          docker save --output exporter-container.tar
+          docker save raffis/mongodb-query-exporter:latest --output exporter-container.tar
       - name: Upload image
         uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
         with:
@@ -90,7 +90,7 @@ jobs:
       - name: Load test image
         run: kind load docker-image raffis/mongodb-query-exporter:latest
       - name: Deploy exporter
-        run: make deploy-test IMG=raffis/mongodb-query-exporter:latest
+        run: make deploy-test
       - name: Setup MongoDB
         env:
           MONGODB_VER: ${{ '13.5.0' }}
