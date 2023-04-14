@@ -64,6 +64,8 @@ jobs:
         mongodb: ["4.4", "5.0"]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3
       - name: Download exporter container
         uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
         with:
