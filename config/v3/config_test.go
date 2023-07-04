@@ -38,7 +38,7 @@ func TestBuild(t *testing.T) {
 				Level:    "error",
 			},
 			Servers: []*Server{
-				&Server{
+				{
 					URI: "mongodb://foo:27017,bar:27017",
 				},
 			},
@@ -69,7 +69,7 @@ func TestBuild(t *testing.T) {
 				Level:    "error",
 			},
 			Servers: []*Server{
-				&Server{
+				{
 					Name: "foo",
 					URI:  "mongodb://foo:27017",
 				},
@@ -89,11 +89,11 @@ func TestBuild(t *testing.T) {
 				Level:    "error",
 			},
 			Servers: []*Server{
-				&Server{
+				{
 					Name: "foo",
 					URI:  "mongodb://foo:27017",
 				},
-				&Server{
+				{
 					Name: "foo2",
 					URI:  "mongodb://foo2:27017",
 				},

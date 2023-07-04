@@ -1,20 +1,7 @@
-# Copyright 2015 The Prometheus Authors
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 GO     := go
 GOPATH := $(firstword $(subst :, ,$(shell $(GO) env GOPATH)))
 KUSTOMIZE := kustomize
-IMG := raffis/mongodb-query-exporter:latest
+IMG := ghcr.io/raffis/mongodb-query-exporter:latest
 pkgs    := $(shell $(GO) list ./... | grep -v /vendor/)
 units    := $(shell $(GO) list ./... | grep -v /vendor/ | grep -v cmd)
 integrations    := $(shell $(GO) list ./... | grep cmd)
@@ -58,20 +45,25 @@ deps:
 	@echo ">> install dependencies"
 	@$(GO) mod download
 
-fmt:
-	@echo ">> formatting code"
-	@$(GO) fmt $(pkgs)
+.PHONY: fmt
+fmt: ## Run go fmt against code.
+	go fmt ./...
+	gofmt -s -w .
 
-vet:
-	@echo ">> vetting code"
-	@$(GO) vet $(pkgs)
+.PHONY: tidy
+tidy: ## Run go mod tidy
+	go mod tidy
+
+.PHONY: vet
+vet: ## Run go vet against code.
+	go vet ./...
 
 build:
 	@echo ">> building binaries"
 	CGO_ENABLED=0 go build -o mongodb-query-exporter cmd/main.go
 
 .PHONY: run
-run: fmt vet
+run:
 	go run ./cmd/main.go
 
 .PHONY: docker-build
@@ -81,6 +73,17 @@ docker-build: build ## Build docker image with the manager.
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+
+TEST_PROFILE=mongodb-v5
+CLUSTER=kind
+
+.PHONY: kind-test
+kind-test: ## Deploy including test
+	kind load docker-image ${IMG} --name ${CLUSTER}
+	kubectl --context kind-${CLUSTER} -n mongo-system delete pods --all
+	kustomize build deploy/tests/cases/${TEST_PROFILE} --enable-helm | kubectl --context kind-${CLUSTER} apply -f -	
+	kubectl --context kind-${CLUSTER} -n mongo-system wait --for=jsonpath='{.status.conditions[1].reason}'=PodCompleted pods -l app.kubernetes.io/managed-by!=Helm -l verify=yes --timeout=3m
+	kustomize build deploy/tests/cases/${TEST_PROFILE} --enable-helm | kubectl --context kind-${CLUSTER} delete -f -	
 
 .PHONY: deploy
 deploy:

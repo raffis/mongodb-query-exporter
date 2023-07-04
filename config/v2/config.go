@@ -165,7 +165,7 @@ func (conf *Config) Build() (*collector.Collector, error) {
 			Collection: metric.Collection,
 			Pipeline:   metric.Pipeline,
 			Metrics: []*collector.Metric{
-				&collector.Metric{
+				{
 					Name:          metric.Name,
 					Type:          metric.Type,
 					Help:          metric.Help,
