@@ -30,22 +30,22 @@ type aggregationTest struct {
 
 func TestInitializeMetrics(t *testing.T) {
 	var tests = []aggregationTest{
-		aggregationTest{
+		{
 			name: "Metric with no type should fail in unsupported metric type",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name: "simple_unlabled_notype",
 					},
 				},
 			},
 			error: "failed to initialize metric simple_unlabled_notype with error unknown metric type provided. Only [gauge] are valid options",
 		},
-		aggregationTest{
+		{
 			name: "Metric with invalid type should fail in unsupported metric type",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name: "simple_unlabled_invalidtype",
 						Type: "notexists",
 					},
@@ -53,11 +53,11 @@ func TestInitializeMetrics(t *testing.T) {
 			},
 			error: "failed to initialize metric simple_unlabled_invalidtype with error unknown metric type provided. Only [gauge] are valid options",
 		},
-		aggregationTest{
+		{
 			name: "Invalid aggregation pipeline must end in error",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name: "simple_gauge_no_pipeline",
 						Type: "gauge",
 					},
@@ -66,11 +66,11 @@ func TestInitializeMetrics(t *testing.T) {
 			},
 			error: "failed to decode json aggregation pipeline: invalid JSON input",
 		},
-		aggregationTest{
+		{
 			name: "Constant labeled gauge and valid value results in a success",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name:        "simple",
 						Type:        "gauge",
 						Value:       "total",
@@ -89,11 +89,11 @@ func TestInitializeMetrics(t *testing.T) {
 				simple{foo="bar",server="main"} 1
 			`,
 		},
-		aggregationTest{
+		{
 			name: "Unlabeled gauge and valid value results in a success",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name:  "simple",
 						Type:  "gauge",
 						Value: "total",
@@ -111,12 +111,12 @@ func TestInitializeMetrics(t *testing.T) {
 				simple{server="main"} 2
 			`,
 		},
-		aggregationTest{
+		{
 			name:    "Unlabeled gauge and valid value results in a success including successful counter",
 			counter: true,
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name:  "simple",
 						Type:  "gauge",
 						Value: "total",
@@ -137,11 +137,11 @@ func TestInitializeMetrics(t *testing.T) {
 			simple{server="main"} 2
 			`,
 		},
-		aggregationTest{
+		{
 			name: "Unlabeled gauge no value found in result",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name: "simple_gauge_value_not_found",
 						Type: "gauge",
 					},
@@ -152,11 +152,11 @@ func TestInitializeMetrics(t *testing.T) {
 			//error: "1 error occurred:\n\t* value not found in result set\n\n",
 			expected: ``,
 		},
-		aggregationTest{
+		{
 			name: "Unlabeled gauge no value found in result but OverrideEmpty is set with EmptyValue 0",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name:          "simple_gauge_value_not_found_overridden",
 						Type:          "gauge",
 						Help:          "overridden",
@@ -172,11 +172,11 @@ func TestInitializeMetrics(t *testing.T) {
 				simple_gauge_value_not_found_overridden{server="main"} 12
 			`,
 		},
-		aggregationTest{
+		{
 			name: "Unlabeled gauge value not of type float",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name:  "simple_gauge_value_not_float",
 						Type:  "gauge",
 						Value: "total",
@@ -188,11 +188,11 @@ func TestInitializeMetrics(t *testing.T) {
 			expected: ``,
 			//error: "1 error occurred:\n\t* provided value taken from the aggregation result has to be a number, type string given\n\n",
 		},
-		aggregationTest{
+		{
 			name: "Labeled gauge labels not found in result",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name:   "simple_gauge_label_not_found",
 						Type:   "gauge",
 						Value:  "total",
@@ -205,11 +205,11 @@ func TestInitializeMetrics(t *testing.T) {
 			expected: ``,
 			//error: "1 error occurred:\n\t* required label foo not found in result set\n\n",
 		},
-		aggregationTest{
+		{
 			name: "Labeled gauge with existing label but not as a string",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name:   "simple_gauge_non_string_label",
 						Type:   "gauge",
 						Value:  "total",
@@ -225,12 +225,12 @@ func TestInitializeMetrics(t *testing.T) {
 			}},
 			expected: ``,
 		},
-		aggregationTest{
+		{
 			name:    "Labeled gauge with existing label but not as a string with ERROR counter",
 			counter: true,
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name:   "simple_gauge_non_string_label",
 						Type:   "gauge",
 						Value:  "total",
@@ -250,11 +250,11 @@ func TestInitializeMetrics(t *testing.T) {
 			counter_total{aggregation="aggregation_0",result="ERROR",server="main"} 1
 			`,
 		},
-		aggregationTest{
+		{
 			name: "Labeled gauge with labels and valid value results in a success",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name:   "simple_gauge_label",
 						Type:   "gauge",
 						Help:   "foobar",
@@ -274,18 +274,18 @@ func TestInitializeMetrics(t *testing.T) {
 				simple_gauge_label{foo="bar",server="main"} 1
 			`,
 		},
-		aggregationTest{
+		{
 			name: "Export multiple metrics from the same aggregation",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name:   "simple_gauge_label",
 						Type:   "gauge",
 						Help:   "foobar",
 						Value:  "total",
 						Labels: []string{"foo"},
 					},
-					&Metric{
+					{
 						Name:        "simple_gauge_label_with_constant",
 						Type:        "gauge",
 						Help:        "bar",
@@ -349,11 +349,11 @@ func TestInitializeMetrics(t *testing.T) {
 
 func TestCachedMetric(t *testing.T) {
 	var tests = []aggregationTest{
-		aggregationTest{
+		{
 			name: "Metric without cache (60s) provides a different value during the next scrape",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name:  "simple_gauge_no_cache",
 						Type:  "gauge",
 						Value: "total",
@@ -377,11 +377,11 @@ func TestCachedMetric(t *testing.T) {
 				simple_gauge_no_cache{server="main"} 2
 			`,
 		},
-		aggregationTest{
+		{
 			name: "Metric with cache (60s) provides the same value during the next scrape",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
-					&Metric{
+					{
 						Name:  "simple_gauge_cached",
 						Type:  "gauge",
 						Value: "total",

@@ -2,16 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mongodb-query-exporter
-  namespace: mongodb-system
 spec:
-  selector:
-    matchLabels:
-      app: mongodb-query-exporter
   replicas: 1
   template:
-    metadata:
-      labels:
-        app: mongodb-query-exporter
     spec:
       containers:
       - image: ghcr.io/raffis/mongodb-query-exporter:latest
@@ -22,16 +15,16 @@ spec:
         name: exporter
         ports:
           - containerPort: 9412
-            name: metrics
+            name: http-metrics
             protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
-            port: metrics
+            port: http-metrics
         livenessProbe:
           httpGet:
             path: /healthz
-            port: metrics
+            port: http-metrics
         resources:
           limits:
             cpu: 100m

@@ -55,14 +55,21 @@ jobs:
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: exporter-container
-          path: exporter-container.tar        
+          path: exporter-container.tar
+      - id: profiles
+        name: Determine test profiles
+        run: |
+          profiles=$(ls deploy/tests/cases | jq -R -s -c 'split("\n")[:-1]')
+          echo $profiles
+          echo "::set-output name=matrix::$profiles"  
 
   e2e-tests:
-    needs: [build]
+    runs-on: ubuntu-latest
+    needs:
+    - build
     strategy:
       matrix:
-        mongodb: ["4.4", "5.0"]
-    runs-on: ubuntu-latest
+        profile: ${{ fromJson(needs.build.outputs.profiles) }}
     steps:
       - name: Checkout
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
@@ -78,40 +85,12 @@ jobs:
       - name: Setup Kubernetes
         uses: engineerd/setup-kind@aa272fe2a7309878ffc2a81c56cfe3ef108ae7d0 #v0.5.0
         with:
-          version: v0.11.1
-          image: kindest/node:v1.21.1@sha256:69860bda5563ac81e3c0057d654b5253219618a22ec3a346306239bba8cfa1a6
-      - name: Setup kustomize
-        shell: bash
+          version: v0.17.0
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@6691bdeb1b0a3286fb7f70fd1423c10e81e5375f # v2.0.0
+      - name: Run test
         run: |
-          curl --silent --location --remote-name "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv4.5.7/kustomize_v4.5.7_linux_amd64.tar.gz"
-          tar xvzf kustomize_v4.5.7_linux_amd64.tar.gz 
-          sudo mv kustomize /usr/local/bin/kustomize
-          rm -rfv *.tar.gz
-          kustomize version
-      - name: Install Helm
-        uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3.5
-      - name: Load test image
-        run: kind load docker-image raffis/mongodb-query-exporter:latest
-      - name: Deploy exporter
-        run: make deploy-test
-      - name: Setup MongoDB
-        env:
-          MONGODB_VER: ${{ '13.5.0' }}
-        run: |
-          kubectl create ns mongodb
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm upgrade --wait -i mongodb bitnami/mongodb \
-          --version $MONGODB_VER \
-          --namespace mongodb \
-          --set auth.rootPassword=password \
-          --set persistence.enabled=false \
-          --set image.tag=${{matrix.mongodb}}
-      - name: Run tests
-        run: |
-          sleep 5
-          kubectl -n mongodb-system port-forward deployment/mongodb-query-exporter 9412:9412 &>/dev/null &
-          sleep 2
-          curl -v --fail http://localhost:9412/metrics  | grep total_mongodb_users
+          make kind-test TEST_PROFILE=${{ matrix.profile }}
       - name: Debug failure
         if: failure()
         run: |

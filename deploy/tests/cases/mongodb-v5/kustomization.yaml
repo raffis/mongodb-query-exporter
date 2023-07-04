@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: mongo-system
+
+resources:
+- ../../base/default
+- ../../base/mongodb
+- configmap.yaml
+- verify-get-metrics.yaml
+
+patches:
+- target:
+    kind: Deployment
+    name: mongodb-query-exporter
+  patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: patch
+    spec:
+      template:
+        spec:
+          containers:
+          - name: exporter
+            env:
+            - name: MDBEXPORTER_MONGODB_URI
+              value: mongodb://${USERNAME}:${PASSWORD}@mongodb.mongo-system:27017
+            - name: USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: username
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: password
+            volumeMounts:
+            - name: config
+              mountPath: /etc/mongodb-query-exporter/config.yaml
+              subPath: config.yaml
+          volumes:
+          - name: config
+            configMap:
+              name: mongodb-query-exporter

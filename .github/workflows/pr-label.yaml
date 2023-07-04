@@ -1,8 +1,9 @@
-name: size-label
+name: pr-label
 on: pull_request
 jobs:
   size-label:
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.head.repo.fork && github.actor != 'dependabot[bot]' }}
     steps:
       - name: size-label
         uses: "pascalgn/size-label-action@b1f4946f381d38d3b5960f76b514afdfef39b609"
