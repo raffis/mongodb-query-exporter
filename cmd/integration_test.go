@@ -34,9 +34,9 @@ type integrationTest struct {
 
 func TestMetricsConfigv2(t *testing.T) {
 	expected := map[string]string{
-		"myapp_example_simplevalue_total":    `name:"myapp_example_simplevalue_total" help:"Simple gauge metric" type:GAUGE metric:<gauge:<value:2 > > `,
-		"myapp_example_processes_total":      `name:"myapp_example_processes_total" help:"The total number of processes in a job queue" type:GAUGE metric:<label:<name:"status" value:"postponed" > label:<name:"type" value:"foobar" > gauge:<value:2 > > metric:<label:<name:"status" value:"processing" > label:<name:"type" value:"bar" > gauge:<value:1 > > `,
-		"myapp_events_total":                 `name:"myapp_events_total" help:"The total number of events (created 1h ago or newer)" type:GAUGE metric:<label:<name:"type" value:"bar" > gauge:<value:2 > > metric:<label:<name:"type" value:"foo" > gauge:<value:1 > > `,
+		"myapp_example_simplevalue_total":    `name:"myapp_example_simplevalue_total" help:"Simple gauge metric" type:GAUGE metric:<label:<name:"server" value:"main" > gauge:<value:2 > > `,
+		"myapp_example_processes_total":      `name:"myapp_example_processes_total" help:"The total number of processes in a job queue" type:GAUGE metric:<label:<name:"server" value:"main" > label:<name:"status" value:"postponed" > label:<name:"type" value:"foobar" > gauge:<value:2 > > metric:<label:<name:"server" value:"main" > label:<name:"status" value:"processing" > label:<name:"type" value:"bar" > gauge:<value:1 > > `,
+		"myapp_events_total":                 `name:"myapp_events_total" help:"The total number of events (created 1h ago or newer)" type:GAUGE metric:<label:<name:"server" value:"main" > label:<name:"type" value:"bar" > gauge:<value:2 > > metric:<label:<name:"server" value:"main" > label:<name:"type" value:"foo" > gauge:<value:1 > > `,
 		"mongodb_query_exporter_query_total": `name:"mongodb_query_exporter_query_total" help:"How many MongoDB queries have been processed, partitioned by metric, server and status" type:COUNTER metric:<label:<name:"aggregation" value:"aggregation_0" > label:<name:"result" value:"SUCCESS" > label:<name:"server" value:"main" > counter:<value:1 > > metric:<label:<name:"aggregation" value:"aggregation_1" > label:<name:"result" value:"SUCCESS" > label:<name:"server" value:"main" > counter:<value:1 > > metric:<label:<name:"aggregation" value:"aggregation_2" > label:<name:"result" value:"SUCCESS" > label:<name:"server" value:"main" > counter:<value:1 > > `,
 	}
 
@@ -63,6 +63,12 @@ func TestMetricsConfigv2(t *testing.T) {
 			name:            "integration test using config v3.0 and mongodb:5.0",
 			configPath:      "../example/configv3.yaml",
 			mongodbImage:    "mongo:5.0",
+			expectedMetrics: expected,
+		},
+		integrationTest{
+			name:            "integration test using config v3.0 and mongodb:6.0",
+			configPath:      "../example/configv3.yaml",
+			mongodbImage:    "mongo:6.0",
 			expectedMetrics: expected,
 		},
 	}
