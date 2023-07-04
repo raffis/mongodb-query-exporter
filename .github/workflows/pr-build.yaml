@@ -59,7 +59,7 @@ jobs:
       - id: profiles
         name: Determine test profiles
         run: |
-          profiles=$(ls deploy/tests/cases | jq -R -s -c 'split("\n")[:-1]')
+          profiles=$(ls config/tests/cases | jq -R -s -c 'split("\n")[:-1]')
           echo $profiles
           echo "::set-output name=matrix::$profiles"  
 
