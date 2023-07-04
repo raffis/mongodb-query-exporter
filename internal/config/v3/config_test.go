@@ -1,10 +1,10 @@
-package v2
+package v3
 
 import (
 	"os"
 	"testing"
 
-	"github.com/raffis/mongodb-query-exporter/v2/x/zap"
+	"github.com/raffis/mongodb-query-exporter/v3/internal/x/zap"
 	"github.com/tj/assert"
 )
 

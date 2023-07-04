@@ -8,11 +8,11 @@ import (
 	"os/user"
 	"time"
 
-	"github.com/raffis/mongodb-query-exporter/v2/collector"
-	"github.com/raffis/mongodb-query-exporter/v2/config"
-	v1 "github.com/raffis/mongodb-query-exporter/v2/config/v1"
-	v2 "github.com/raffis/mongodb-query-exporter/v2/config/v2"
-	v3 "github.com/raffis/mongodb-query-exporter/v2/config/v3"
+	"github.com/raffis/mongodb-query-exporter/v3/internal/collector"
+	"github.com/raffis/mongodb-query-exporter/v3/internal/config"
+	v1 "github.com/raffis/mongodb-query-exporter/v3/internal/config/v1"
+	v2 "github.com/raffis/mongodb-query-exporter/v3/internal/config/v2"
+	v3 "github.com/raffis/mongodb-query-exporter/v3/internal/config/v3"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -41,7 +41,6 @@ var (
 				panic(err)
 			}
 
-			//reg := prometheus.NewRegistry()
 			prometheus.MustRegister(c)
 			promCollector = c
 			_ = c.StartCacheInvalidator()
