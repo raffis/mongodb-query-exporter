@@ -181,7 +181,7 @@ func (c *Collector) describeMetric(metric *Metric) *prometheus.Desc {
 	return prometheus.NewDesc(
 		metric.Name,
 		metric.Help,
-		metric.Labels,
+		append([]string{"server"}, metric.Labels...),
 		metric.ConstLabels,
 	)
 }
@@ -392,7 +392,7 @@ func (c *Collector) aggregate(aggregation *Aggregation, srv *server, ch chan<- p
 		}
 
 		for _, metric := range aggregation.Metrics {
-			m, err := createMetric(metric, result)
+			m, err := createMetric(srv, metric, result)
 			if err != nil {
 				return err
 			}
@@ -414,7 +414,7 @@ func (c *Collector) aggregate(aggregation *Aggregation, srv *server, ch chan<- p
 				result[label] = ""
 			}
 
-			m, err := createMetric(metric, result)
+			m, err := createMetric(srv, metric, result)
 			if err != nil {
 				return err
 			}
@@ -427,7 +427,7 @@ func (c *Collector) aggregate(aggregation *Aggregation, srv *server, ch chan<- p
 	return multierr.ErrorOrNil()
 }
 
-func createMetric(metric *Metric, result AggregationResult) (prometheus.Metric, error) {
+func createMetric(srv *server, metric *Metric, result AggregationResult) (prometheus.Metric, error) {
 	value, err := metric.getValue(result)
 	if err != nil {
 		return nil, err
@@ -438,6 +438,7 @@ func createMetric(metric *Metric, result AggregationResult) (prometheus.Metric, 
 		return nil, err
 	}
 
+	labels = append([]string{srv.name}, labels...)
 	return prometheus.NewConstMetric(metric.desc, prometheus.GaugeValue, value, labels...)
 }
 

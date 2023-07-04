@@ -86,7 +86,7 @@ func TestInitializeMetrics(t *testing.T) {
 			expected: `
 				# HELP simple foobar
 				# TYPE simple gauge
-				simple{foo="bar"} 1
+				simple{foo="bar",server="main"} 1
 			`,
 		},
 		aggregationTest{
@@ -108,7 +108,7 @@ func TestInitializeMetrics(t *testing.T) {
 			expected: `
 				# HELP simple foobar
 				# TYPE simple gauge
-				simple 2
+				simple{server="main"} 2
 			`,
 		},
 		aggregationTest{
@@ -134,7 +134,7 @@ func TestInitializeMetrics(t *testing.T) {
 			counter_total{aggregation="aggregation_0",result="SUCCESS",server="main"} 1
 			# HELP simple foobar
 			# TYPE simple gauge
-			simple 2
+			simple{server="main"} 2
 			`,
 		},
 		aggregationTest{
@@ -169,7 +169,7 @@ func TestInitializeMetrics(t *testing.T) {
 			expected: `
 				# HELP simple_gauge_value_not_found_overridden overridden
 				# TYPE simple_gauge_value_not_found_overridden gauge
-				simple_gauge_value_not_found_overridden 12
+				simple_gauge_value_not_found_overridden{server="main"} 12
 			`,
 		},
 		aggregationTest{
@@ -271,7 +271,7 @@ func TestInitializeMetrics(t *testing.T) {
 			expected: `
 				# HELP simple_gauge_label foobar
 				# TYPE simple_gauge_label gauge
-				simple_gauge_label{foo="bar"} 1
+				simple_gauge_label{foo="bar",server="main"} 1
 			`,
 		},
 		aggregationTest{
@@ -303,11 +303,11 @@ func TestInitializeMetrics(t *testing.T) {
 			expected: `
 				# HELP simple_gauge_label foobar
 				# TYPE simple_gauge_label gauge
-				simple_gauge_label{foo="bar"} 1
+				simple_gauge_label{foo="bar",server="main"} 1
 
 				# HELP simple_gauge_label_with_constant bar
 				# TYPE simple_gauge_label_with_constant gauge
-				simple_gauge_label_with_constant{foo="bar", foobar="foo"} 1
+				simple_gauge_label_with_constant{foo="bar",foobar="foo",server="main"} 1
 			`,
 		},
 	}
@@ -369,12 +369,12 @@ func TestCachedMetric(t *testing.T) {
 			expected: `
 				# HELP simple_gauge_no_cache foobar
 				# TYPE simple_gauge_no_cache gauge
-				simple_gauge_no_cache 1
+				simple_gauge_no_cache{server="main"} 1
 			`,
 			expectedCached: `
 				# HELP simple_gauge_no_cache foobar
 				# TYPE simple_gauge_no_cache gauge
-				simple_gauge_no_cache 2
+				simple_gauge_no_cache{server="main"} 2
 			`,
 		},
 		aggregationTest{
@@ -397,12 +397,12 @@ func TestCachedMetric(t *testing.T) {
 			expected: `
 				# HELP simple_gauge_cached Cached for 60s
 				# TYPE simple_gauge_cached gauge
-				simple_gauge_cached 1
+				simple_gauge_cached{server="main"} 1
 			`,
 			expectedCached: `
 				# HELP simple_gauge_cached Cached for 60s
 				# TYPE simple_gauge_cached gauge
-				simple_gauge_cached 1
+				simple_gauge_cached{server="main"} 1
 			`,
 		},
 	}
