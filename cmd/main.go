@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"os/user"
 	"time"
 
@@ -35,27 +37,39 @@ var (
 		Use:   "mongodb-query-exporter",
 		Short: "MongoDB aggregation exporter for prometheus",
 		Long:  `Export aggregations from MongoDB as prometheus metrics.`,
-		Run: func(cmd *cobra.Command, args []string) {
-			c, conf, err := buildCollector()
-			if err != nil {
-				panic(err)
-			}
-
-			prometheus.MustRegister(c)
-			promCollector = c
-			_ = c.StartCacheInvalidator()
-			srv = buildHTTPServer(prometheus.DefaultGatherer, conf)
-			err = srv.ListenAndServe()
-
-			// Only panic if we have a net error
-			if _, ok := err.(*net.OpError); ok {
-				panic(err)
-			} else {
-				os.Stderr.WriteString(err.Error() + "\n")
-			}
-		},
+		Run:   run,
 	}
 )
+
+func run(cmd *cobra.Command, args []string) {
+	c, conf, err := buildCollector()
+	if err != nil {
+		panic(err)
+	}
+
+	ctx := context.TODO()
+
+	prometheus.MustRegister(c)
+	promCollector = c
+	_ = c.StartCacheInvalidator(ctx)
+	srv = buildHTTPServer(prometheus.DefaultGatherer, conf)
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			panic(err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		panic(err)
+	}
+}
 
 func buildCollector() (*collector.Collector, config.Config, error) {
 	var configVersion float32
