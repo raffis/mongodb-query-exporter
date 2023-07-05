@@ -2,10 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "mongodb-query-exporter.fullname" . }}
-  {{- with ( include "mongodb-query-exporter.labels" . ) }}
-  labels:
-    {{- . }}
-  {{- end }}
+  labels: {{- include "mongodb-query-exporter.labels" . | nindent 4 }}
   {{- with .Values.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}

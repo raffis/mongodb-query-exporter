@@ -68,13 +68,14 @@ Determine configmap name, can either be the self-created of an existing one
 {{/*
 Common labels
 */}}
-{{- define "mongodb-query-exporter.labels" -}}{{- if .Values.chartLabels }}
-    app.kubernetes.io/name: {{ include "mongodb-query-exporter.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    helm.sh/chart: {{ include "mongodb-query-exporter.chart" . }}
+{{- define "mongodb-query-exporter.labels" -}}
+{{ if .Values.chartLabels -}}
+app.kubernetes.io/name: {{ include "mongodb-query-exporter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+helm.sh/chart: {{ include "mongodb-query-exporter.chart" . }}
 {{- end -}}
-{{- with .Values.labels }}
-    {{ . | toYaml }}
+{{ if .Values.labels }}
+{{ toYaml .Values.labels }}
 {{- end -}}
 {{- end -}}
