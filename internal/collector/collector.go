@@ -135,7 +135,7 @@ func WithConfig(conf *Config) option {
 	}
 }
 
-// Run metric c for each metric either in push or pull mode
+// RegisterServer aadds a new MongoDB server to the collector
 func (c *Collector) RegisterServer(name string, driver Driver) error {
 	for _, srv := range c.servers {
 		if srv.name == name {
@@ -152,9 +152,9 @@ func (c *Collector) RegisterServer(name string, driver Driver) error {
 	return nil
 }
 
-// Run metric c for each metric either in push or pull mode
+// RegisterAggregation adds a new aggregation to the collector
 func (c *Collector) RegisterAggregation(aggregation *Aggregation) error {
-	if len(aggregation.Servers) != 0 && len(aggregation.Servers) != len(c.GetServers(aggregation.Servers)) {
+	if len(aggregation.Servers) != 0 && len(aggregation.Servers) != len(c.getServers(aggregation.Servers)) {
 		return fmt.Errorf("aggregation bound to server which have not been found")
 	}
 
@@ -188,7 +188,7 @@ func (c *Collector) describeMetric(metric *Metric) *prometheus.Desc {
 
 // Return registered drivers
 // You may provide a list of names to only return matching drivers by name
-func (c *Collector) GetServers(names []string) []*server {
+func (c *Collector) getServers(names []string) []*server {
 	var servers []*server
 	for _, srv := range c.servers {
 		//if we have no filter given just add all drivers to be returned
@@ -226,7 +226,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	var wg sync.WaitGroup
 
 	for i, aggregation := range c.aggregations {
-		for _, srv := range c.GetServers(aggregation.Servers) {
+		for _, srv := range c.getServers(aggregation.Servers) {
 			metrics, err := c.getCached(aggregation, srv)
 
 			if err == nil {
@@ -313,15 +313,15 @@ func (c *Collector) getCached(aggregation *Aggregation, srv *server) ([]promethe
 // As soon as a new event is registered the cache gets invalidated and the aggregation
 // will be re evaluated during the next scrape.
 // This is a non blocking operation.
-func (c *Collector) StartCacheInvalidator() error {
+func (c *Collector) StartCacheInvalidator(ctx context.Context) error {
 	for _, aggregation := range c.aggregations {
 		if aggregation.Mode != ModePush {
 			continue
 		}
 
-		for _, srv := range c.GetServers(aggregation.Servers) {
+		for _, srv := range c.getServers(aggregation.Servers) {
 			go func(aggregation *Aggregation, srv *server) {
-				err := c.pushUpdate(aggregation, srv)
+				err := c.pushUpdate(ctx, aggregation, srv)
 
 				if err != nil {
 					c.logger.Errorf("%s; failed to watch for updates, fallback to pull", err)
@@ -333,9 +333,7 @@ func (c *Collector) StartCacheInvalidator() error {
 	return nil
 }
 
-func (c *Collector) pushUpdate(aggregation *Aggregation, srv *server) error {
-	ctx := context.Background()
-
+func (c *Collector) pushUpdate(ctx context.Context, aggregation *Aggregation, srv *server) error {
 	c.logger.Infof("start changestream on %s.%s, waiting for changes", aggregation.Database, aggregation.Collection)
 	cursor, err := srv.driver.Watch(ctx, aggregation.Database, aggregation.Collection, bson.A{})
 
@@ -345,7 +343,7 @@ func (c *Collector) pushUpdate(aggregation *Aggregation, srv *server) error {
 
 	defer cursor.Close(ctx)
 
-	for cursor.Next(context.TODO()) {
+	for cursor.Next(ctx) {
 		var result ChangeStreamEvent
 
 		err := cursor.Decode(&result)
