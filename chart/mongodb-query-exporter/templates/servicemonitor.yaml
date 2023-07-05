@@ -3,11 +3,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ include "mongodb-query-exporter.fullname" . }}
-  {{- $labels := merge ( include "mongodb-query-exporter.labels" . | fromYaml) .Values.serviceMonitor.labels -}} 
-  {{- with $labels }}
-  labels:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+  labels: {{- merge ( include "mongodb-query-exporter.labels" . | fromYaml) .Values.serviceMonitor.labels | toYaml | nindent 4 }}
   {{- with .Values.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
