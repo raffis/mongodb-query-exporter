@@ -1,7 +1,6 @@
 # Prometheus MongoDB query exporter
 [![release](https://github.com/raffis/mongodb-query-exporter/actions/workflows/release.yaml/badge.svg)](https://github.com/raffis/mongodb-query-exporter/actions/workflows/release.yaml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/raffis/mongodb-query-exporter/v2)](https://goreportcard.com/report/github.com/raffis/mongodb-query-exporter/v2)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/raffis/mongodb-query-exporter/v2)](https://pkg.go.dev/github.com/raffis/mongodb-query-exporter/v2)
+[![Go Report Card](https://goreportcard.com/badge/github.com/raffis/mongodb-query-exporter/v3)](https://goreportcard.com/report/github.com/raffis/mongodb-query-exporter/v3)
 [![Coverage Status](https://coveralls.io/repos/github/raffis/mongodb-query-exporter/badge.svg?branch=master)](https://coveralls.io/github/raffis/mongodb-query-exporter?branch=master)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/mongodb-query-exporter)](https://artifacthub.io/packages/search?repo=mongodb-query-exporter)
 

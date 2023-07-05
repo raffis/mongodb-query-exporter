@@ -1,7 +1,7 @@
 project_name: mongodb-query-exporter
 
 builds:
-- id: cli
+- id: main
   main: cmd/main.go
   binary: mongodb-query-exporter
   goos:
@@ -12,10 +12,10 @@ builds:
   - CGO_ENABLED=0
 
 archives:
-- id: cli
+- id: main
   name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
   builds:
-  - cli
+  - main
 
 checksum:
   name_template: 'checksums.txt'
@@ -35,11 +35,11 @@ sboms:
 
 dockers:
 - image_templates:
-  - ghcr.io/raffis/{{ .ProjectName }}:{{ .Version }}-amd64
+  - ghcr.io/raffis/{{ .ProjectName }}:v{{ .Version }}-amd64
   dockerfile: Dockerfile
   use: buildx
   ids:
-  - cli
+  - main
   build_flag_templates:
   - --platform=linux/amd64
   - --label=org.opencontainers.image.title={{ .ProjectName }}
@@ -51,12 +51,12 @@ dockers:
   - --label=org.opencontainers.image.revision={{ .FullCommit }}
   - --label=org.opencontainers.image.licenses=MIT
 - image_templates: 
-  - "ghcr.io/raffis/{{ .ProjectName }}:{{ .Version }}-arm64v8"
+  - "ghcr.io/raffis/{{ .ProjectName }}:v{{ .Version }}-arm64v8"
   goarch: arm64
   dockerfile: Dockerfile
   use: buildx
   ids:
-  - cli
+  - main
   build_flag_templates:
   - --platform=linux/arm64/v8
   - --label=org.opencontainers.image.title={{ .ProjectName }}
@@ -69,14 +69,14 @@ dockers:
   - --label=org.opencontainers.image.licenses=MIT
 
 docker_manifests:
-- name_template: ghcr.io/raffis/{{ .ProjectName }}:{{ .Version }}
+- name_template: ghcr.io/raffis/{{ .ProjectName }}:v{{ .Version }}
   image_templates:
-  - ghcr.io/raffis/{{ .ProjectName }}:{{ .Version }}-amd64
-  - ghcr.io/raffis/{{ .ProjectName }}:{{ .Version }}-arm64v8
+  - ghcr.io/raffis/{{ .ProjectName }}:v{{ .Version }}-amd64
+  - ghcr.io/raffis/{{ .ProjectName }}:v{{ .Version }}-arm64v8
 - name_template: ghcr.io/raffis/{{ .ProjectName }}:latest
   image_templates:
-  - ghcr.io/raffis/{{ .ProjectName }}:{{ .Version }}-amd64
-  - ghcr.io/raffis/{{ .ProjectName }}:{{ .Version }}-arm64v8
+  - ghcr.io/raffis/{{ .ProjectName }}:v{{ .Version }}-amd64
+  - ghcr.io/raffis/{{ .ProjectName }}:v{{ .Version }}-arm64v8
 
 signs:
 - cmd: cosign
@@ -96,7 +96,7 @@ docker_signs:
 - cmd: cosign
   env:
   - COSIGN_EXPERIMENTAL=1
-  artifacts: images
+  artifacts: all
   output: true
   args:
   - 'sign'

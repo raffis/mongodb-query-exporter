@@ -81,27 +81,18 @@ CLUSTER=kind
 kind-test: ## Deploy including test
 	kind load docker-image ${IMG} --name ${CLUSTER}
 	kubectl --context kind-${CLUSTER} -n mongo-system delete pods --all
-	kustomize build deploy/tests/cases/${TEST_PROFILE} --enable-helm | kubectl --context kind-${CLUSTER} apply -f -	
+	kustomize build config/tests/cases/${TEST_PROFILE} --enable-helm | kubectl --context kind-${CLUSTER} apply -f -	
 	kubectl --context kind-${CLUSTER} -n mongo-system wait --for=jsonpath='{.status.conditions[1].reason}'=PodCompleted pods -l app.kubernetes.io/managed-by!=Helm -l verify=yes --timeout=3m
-	kustomize build deploy/tests/cases/${TEST_PROFILE} --enable-helm | kubectl --context kind-${CLUSTER} delete -f -	
+	kustomize build config/tests/cases/${TEST_PROFILE} --enable-helm | kubectl --context kind-${CLUSTER} delete -f -	
 
 .PHONY: deploy
 deploy:
 	cd deploy/exporter && $(KUSTOMIZE) edit set image ghcr.io/raffis/mongodb-query-exporter=${IMG}
-	$(KUSTOMIZE) build deploy/exporter | kubectl apply -f -
+	$(KUSTOMIZE) build config/base | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy: ## Undeploy exporter from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
-
-.PHONY: deploy-test
-deploy-test:
-	cd deploy/test && $(KUSTOMIZE) edit set image ghcr.io/raffis/mongodb-query-exporter=${IMG}
-	$(KUSTOMIZE) build deploy/test | kubectl apply -f -
-
-.PHONY: undeploy-test
-undeploy-test: ## Undeploy exporter from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/test | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: all style fmt build test vet
 

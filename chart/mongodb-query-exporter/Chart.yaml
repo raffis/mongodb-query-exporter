@@ -15,4 +15,4 @@ keywords:
 name: mongodb-query-exporter
 sources:
 - https://github.com/raffis/mongodb-query-exporter
-version: 3.0.2
+version: 4.0.0
