@@ -3,9 +3,6 @@ name: check-actions
 permissions: {}
 
 on:
-  push:
-    branches:
-      - '*'
   pull_request:
     branches:
       - 'master'

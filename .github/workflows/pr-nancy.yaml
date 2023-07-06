@@ -1,9 +1,6 @@
 name: pr-nancy
 
 on:
-  push:
-    branches:
-      - '*'
   pull_request:
     branches:
       - 'master'
