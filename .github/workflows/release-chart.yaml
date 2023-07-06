@@ -37,4 +37,4 @@ jobs:
           repository=$(echo "${{ github.repository_owner }}" | tr [:upper:] [:lower:])
           helm push ${{ github.workspace }}/chart/mongodb-query-exporter-*.tgz oci://ghcr.io/$repository/charts |& tee .digest
           cosign login --username ${GITHUB_ACTOR} --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
-          cosign sign ghcr.io/${{ github.repository_owner }}/charts/mongodb-query-exporter@$(cat .digest | awk -F "[, ]+" '/Digest/{print $NF}')
+          cosign sign --yes ghcr.io/${{ github.repository_owner }}/charts/mongodb-query-exporter@$(cat .digest | awk -F "[, ]+" '/Digest/{print $NF}')
