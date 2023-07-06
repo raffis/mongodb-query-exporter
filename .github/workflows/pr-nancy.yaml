@@ -1,15 +1,20 @@
-name: main
+name: pr-nancy
 
 on:
-  push:
+  pull_request:
     branches:
-      - main
+      - 'master'
 
 permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  nancy:
     runs-on: ubuntu-latest
+    name: Nancy
     steps:
       - name: Checkout
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
@@ -24,9 +29,7 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Tests
-        run: make test
-      - name: Send go coverage report
-        uses: shogo82148/actions-goveralls@df920a6a2468668dfcf71a0b43817f89eaa5ea04 # v1.7.0
-        with:
-          path-to-profile: coverage.out
+      - name: WriteGoList
+        run: go list -json -m all > go.list
+      - name: Nancy SAST Scan
+        uses: sonatype-nexus-community/nancy-github-action@726e338312e68ecdd4b4195765f174d3b3ce1533 # v1.0.3

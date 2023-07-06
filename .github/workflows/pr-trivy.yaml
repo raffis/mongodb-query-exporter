@@ -1,0 +1,17 @@
+name: pr-trivy
+on: pull_request
+
+permissions: {}
+
+jobs:
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trivy fs scan
+        uses: aquasecurity/trivy-action@41f05d9ecffa2ed3f1580af306000f734b733e54 # v0.11.2
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
