@@ -1,0 +1,2 @@
+CVE-2022-29153 # no fix and this app does not make use of consul
+CVE-2020-8561 # no fix and this is only related to testcontainers

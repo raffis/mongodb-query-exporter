@@ -9,7 +9,7 @@ require (
 	github.com/prometheus/client_model v0.3.0
 	github.com/prometheus/common v0.42.0
 	github.com/spf13/cobra v1.7.0
-	github.com/spf13/viper v1.16.1-0.20230629045012-097e0d888f8c
+	github.com/spf13/viper v1.16.0
 	github.com/testcontainers/testcontainers-go v0.21.0
 	github.com/tj/assert v0.0.3
 	go.mongodb.org/mongo-driver v1.12.0
