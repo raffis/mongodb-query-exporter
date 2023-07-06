@@ -17,6 +17,11 @@ jobs:
     outputs:
       results: ${{ steps.parse-results.outputs.results }}
     steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@55d479fb1c5bcad5a4f9099a5d9f37c8857b2845 # v2.4.1
+      with:
+        egress-policy: audit
+
     - name: Scan for vulnerabilities
       uses: aquasecurity/trivy-action@41f05d9ecffa2ed3f1580af306000f734b733e54 # 0.11.2 (Trivy v0.34.0)
       with: 
@@ -55,6 +60,11 @@ jobs:
     permissions:
       issues: write
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@55d479fb1c5bcad5a4f9099a5d9f37c8857b2845 # v2.4.1
+        with:
+          egress-policy: audit
+
       - name: Checkout
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - name: Download scan
