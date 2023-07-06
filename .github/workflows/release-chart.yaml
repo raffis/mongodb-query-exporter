@@ -11,8 +11,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
-      packages: write
-      id-token: write 
+      packages: write # Needed to publish chart to ghcr.io
+      id-token: write # Needed for keyless signing
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@55d479fb1c5bcad5a4f9099a5d9f37c8857b2845 # v2.4.1
