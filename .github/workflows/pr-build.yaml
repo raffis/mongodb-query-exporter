@@ -10,6 +10,42 @@ on:
 permissions: {}
 
 jobs:
+  lint-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@55d479fb1c5bcad5a4f9099a5d9f37c8857b2845 # v2.4.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 #v3.5
+        with:
+          version: v3.4.0
+
+      - uses: actions/setup-python@bd6b4b6205c4dbad673328db7b31b7fab9e241c0 # v4.6.1
+        with:
+          python-version: 3.7
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@e8788873172cb653a90ca2e819d79d65a66d4e76 # v2.4.0
+
+      - name: Run chart-testing (list-changed)
+        id: list-changed
+        run: |
+          changed=$(ct list-changed --target-branch=master --chart-dirs chart)
+          if [[ -n "$changed" ]]; then
+            echo "::set-output name=changed::true"
+          fi
+
+      - name: Run chart-testing (lint)
+        run: ct lint --target-branch=master --chart-dirs chart
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -69,6 +105,62 @@ jobs:
           profiles=$(ls config/tests/cases | jq -R -s -c 'split("\n")[:-1]')
           echo $profiles
           echo "::set-output name=matrix::$profiles"  
+ 
+  test-chart: 
+    runs-on: ubuntu-latest
+    needs:
+    - build
+    - lint-chart
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@55d479fb1c5bcad5a4f9099a5d9f37c8857b2845 # v2.4.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 #v3.5
+        with:
+          version: v3.4.0
+
+      - uses: actions/setup-python@bd6b4b6205c4dbad673328db7b31b7fab9e241c0 # v4.6.1
+        with:
+          python-version: 3.7
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@e8788873172cb653a90ca2e819d79d65a66d4e76 # v2.4.0
+
+      - name: Run chart-testing (list-changed)
+        id: list-changed
+        run: |
+          changed=$(ct list-changed --target-branch=master --chart-dirs chart)
+          if [[ -n "$changed" ]]; then
+            echo "::set-output name=changed::true"
+          fi
+
+      - name: Run chart-testing (lint)
+        run: ct lint --target-branch=master --chart-dirs chart
+
+      - name: Create kind cluster
+        uses: helm/kind-action@fa81e57adff234b2908110485695db0f181f3c67 # v1.7.0
+        if: steps.list-changed.outputs.changed == 'true'
+
+      - name: Download exporter container
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: exporter-container
+          path: /tmp
+      - name: Load image
+        run: |
+          docker load --input /tmp/exporter-container.tar
+          docker image ls -a
+          
+      - name: Run chart-testing (install)
+        run: ct install --target-branch=master --chart-dirs chart --set image.tag=latest
 
   e2e-tests:
     runs-on: ubuntu-latest
