@@ -16,7 +16,8 @@ metrics:
   labels: []
   mode: pull
   cache: 0
-  constLabels: {}
+  constLabels:
+    region: eu-central-1
   database: mydb
   collection: objects
   pipeline: |

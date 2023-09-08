@@ -25,7 +25,8 @@ aggregations:
     overrideEmpty: true # if an empty result set is returned..
     emptyValue: 0       # create a metric with value 0
     labels: []
-    constLabels: {}
+    constLabels:
+      region: eu-central-1
   mode: pull
   pipeline: |
     [
@@ -39,8 +40,7 @@ aggregations:
     help: 'The total number of processes in a job queue'
     value: total
     labels: [type,status]
-    constLabels:
-      region: eu-central-1
+    constLabels: {}
   mode: pull
   cache: "5m"
   pipeline: |
