@@ -148,17 +148,8 @@ jobs:
       - name: Set up chart-testing
         uses: helm/chart-testing-action@e8788873172cb653a90ca2e819d79d65a66d4e76 # v2.4.0
 
-      - name: Run chart-testing (list-changed)
-        id: list-changed
-        run: |
-          changed=$(ct list-changed --target-branch=master --chart-dirs chart)
-          if [[ -n "$changed" ]]; then
-            echo "::set-output name=changed::true"
-          fi
-
       - name: Create kind cluster
         uses: helm/kind-action@fa81e57adff234b2908110485695db0f181f3c67 # v1.7.0
-        if: steps.list-changed.outputs.changed == 'true'
 
       - name: Download exporter container
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
