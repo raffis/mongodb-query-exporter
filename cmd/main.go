@@ -21,17 +21,18 @@ import (
 )
 
 var (
-	configPath   string
-	logLevel     string
-	logEncoding  string
-	bind         string
-	uri          string
-	metricsPath  string
-	queryTimeout time.Duration
-	srv          *http.Server
+	configPath    string
+	logLevel      string
+	logEncoding   string
+	bind          string
+	uri           string
+	metricsPath   string
+	queryTimeout  time.Duration
+	srv           *http.Server
+	promCollector *collector.Collector
 )
 
-func main() {
+func init() {
 	flag.StringVarP(&uri, "uri", "u", config.DefaultMongoDBURI, "MongoDB URI (default is mongodb://localhost:27017). Use MDBEXPORTER_SERVER_%d_MONGODB_URI envs if you target multiple server")
 	flag.StringVarP(&configPath, "file", "f", "", "config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
 	flag.StringVarP(&logLevel, "log-level", "l", config.DefaultLogLevel, "Define the log level (default is warning) [debug,info,warn,error]")
@@ -52,7 +53,9 @@ func main() {
 	_ = viper.BindEnv("log.encoding", "MDBEXPORTER_LOG_ENCODING")
 	_ = viper.BindEnv("bind", "MDBEXPORTER_BIND")
 	_ = viper.BindEnv("metricsPath", "MDBEXPORTER_METRICSPATH")
+}
 
+func main() {
 	flag.Parse()
 	initConfig()
 
@@ -62,6 +65,7 @@ func main() {
 	}
 
 	prometheus.MustRegister(c)
+	promCollector = c
 	_ = c.StartCacheInvalidator()
 	srv = buildHTTPServer(prometheus.DefaultGatherer, conf)
 	err = srv.ListenAndServe()
