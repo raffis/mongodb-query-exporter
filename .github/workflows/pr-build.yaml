@@ -170,6 +170,7 @@ jobs:
           docker load --input /tmp/exporter-container.tar
           docker tag ghcr.io/raffis/mongodb-query-exporter:latest ghcr.io/raffis/mongodb-query-exporter:0.0.0
           docker image ls -a
+          kind load docker-image ghcr.io/raffis/mongodb-query-exporter:0.0.0 --name chart-testing
           
       - name: Run chart-testing (install)
         run: ct install --target-branch=master --chart-dirs chart
