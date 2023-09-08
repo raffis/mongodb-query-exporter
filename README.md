@@ -138,7 +138,8 @@ aggregations:
     overrideEmpty: true # if an empty result set is returned..
     emptyValue: 0       # create a metric with value 0
     labels: []
-    constLabels: []
+    constLabels:
+      region: eu-central-1
   cache: 0
   mode: pull
   pipeline: |
@@ -153,7 +154,7 @@ aggregations:
     help: 'The total number of processes in a job queue'
     value: total
     labels: [type,status]
-    constLabels: []
+    constLabels: {}
   mode: pull
   pipeline: |
     [
@@ -188,7 +189,7 @@ aggregations:
     help: 'The total number of events (created 1h ago or newer)'
     value: count
     labels: [type]
-    constLabels: []
+    constLabels: {}
   mode: pull
   # Note $$NOW is only supported in MongoDB >= 4.2
   pipeline: |
