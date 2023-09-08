@@ -24,7 +24,8 @@ metrics:
   labels: []
   mode: pull
   cache: 0
-  constLabels: []
+  constLabels:
+    region: eu-central-1
   database: mydb
   collection: objects
   pipeline: |
@@ -37,7 +38,7 @@ metrics:
   value: total
   mode: pull
   labels: [type,status]
-  constLabels: []
+  constLabels: {}
   database: mydb
   collection: queue
   pipeline: |
@@ -71,7 +72,7 @@ metrics:
   value: count
   mode: pull
   labels: [type]
-  constLabels: []
+  constLabels: {}
   database: mydb
   collection: events
   # Note $$NOW is only supported in MongoDB >= 4.2

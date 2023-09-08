@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/raffis/mongodb-query-exporter/v3/internal/x/zap"
+	"github.com/raffis/mongodb-query-exporter/v5/internal/x/zap"
 	"github.com/tj/assert"
 )
 

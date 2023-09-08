@@ -1,6 +1,6 @@
 # Prometheus MongoDB query exporter
 [![release](https://github.com/raffis/mongodb-query-exporter/actions/workflows/release.yaml/badge.svg)](https://github.com/raffis/mongodb-query-exporter/actions/workflows/release.yaml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/raffis/mongodb-query-exporter/v3)](https://goreportcard.com/report/github.com/raffis/mongodb-query-exporter/v3)
+[![Go Report Card](https://goreportcard.com/badge/github.com/raffis/mongodb-query-exporter/v5)](https://goreportcard.com/report/github.com/raffis/mongodb-query-exporter/v5)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/raffis/mongodb-query-exporter/badge)](https://api.securityscorecards.dev/projects/github.com/raffis/mongodb-query-exporter)
 [![Coverage Status](https://coveralls.io/repos/github/raffis/mongodb-query-exporter/badge.svg?branch=master)](https://coveralls.io/github/raffis/mongodb-query-exporter?branch=master)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/mongodb-query-exporter)](https://artifacthub.io/packages/search?repo=mongodb-query-exporter)
@@ -138,7 +138,8 @@ aggregations:
     overrideEmpty: true # if an empty result set is returned..
     emptyValue: 0       # create a metric with value 0
     labels: []
-    constLabels: []
+    constLabels:
+      region: eu-central-1
   cache: 0
   mode: pull
   pipeline: |
@@ -153,7 +154,7 @@ aggregations:
     help: 'The total number of processes in a job queue'
     value: total
     labels: [type,status]
-    constLabels: []
+    constLabels: {}
   mode: pull
   pipeline: |
     [
@@ -188,7 +189,7 @@ aggregations:
     help: 'The total number of events (created 1h ago or newer)'
     value: count
     labels: [type]
-    constLabels: []
+    constLabels: {}
   mode: pull
   # Note $$NOW is only supported in MongoDB >= 4.2
   pipeline: |
