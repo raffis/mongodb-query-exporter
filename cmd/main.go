@@ -16,7 +16,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/spf13/cobra"
+	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -30,32 +30,53 @@ var (
 	queryTimeout  time.Duration
 	srv           *http.Server
 	promCollector *collector.Collector
-
-	rootCmd = &cobra.Command{
-		Use:   "mongodb-query-exporter",
-		Short: "MongoDB aggregation exporter for prometheus",
-		Long:  `Export aggregations from MongoDB as prometheus metrics.`,
-		Run: func(cmd *cobra.Command, args []string) {
-			c, conf, err := buildCollector()
-			if err != nil {
-				panic(err)
-			}
-
-			prometheus.MustRegister(c)
-			promCollector = c
-			_ = c.StartCacheInvalidator()
-			srv = buildHTTPServer(prometheus.DefaultGatherer, conf)
-			err = srv.ListenAndServe()
-
-			// Only panic if we have a net error
-			if _, ok := err.(*net.OpError); ok {
-				panic(err)
-			} else {
-				os.Stderr.WriteString(err.Error() + "\n")
-			}
-		},
-	}
 )
+
+func init() {
+	flag.StringVarP(&uri, "uri", "u", config.DefaultMongoDBURI, "MongoDB URI (default is mongodb://localhost:27017). Use MDBEXPORTER_SERVER_%d_MONGODB_URI envs if you target multiple server")
+	flag.StringVarP(&configPath, "file", "f", "", "config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
+	flag.StringVarP(&logLevel, "log-level", "l", config.DefaultLogLevel, "Define the log level (default is warning) [debug,info,warn,error]")
+	flag.StringVarP(&logEncoding, "log-encoding", "e", config.DefaultLogEncoder, "Define the log format (default is json) [json,console]")
+	flag.StringVarP(&bind, "bind", "b", config.DefaultBindAddr, "Address to bind http server (default is :9412)")
+	flag.StringVarP(&metricsPath, "path", "p", config.DefaultMetricsPath, "Metric path (default is /metrics)")
+	flag.DurationVarP(&queryTimeout, "query-timeout", "t", config.DefaultQueryTimeout, "Timeout for MongoDB queries")
+
+	_ = viper.BindPFlag("log.level", flag.Lookup("log-level"))
+	_ = viper.BindPFlag("log.encoding", flag.Lookup("log-encoding"))
+	_ = viper.BindPFlag("bind", flag.Lookup("bind"))
+	_ = viper.BindPFlag("metricsPath", flag.Lookup("path"))
+	_ = viper.BindPFlag("mongodb.uri", flag.Lookup("uri"))
+	_ = viper.BindPFlag("mongodb.queryTimeout", flag.Lookup("query-timeout"))
+	_ = viper.BindEnv("mongodb.uri", "MDBEXPORTER_MONGODB_URI")
+	_ = viper.BindEnv("global.queryTimeout", "MDBEXPORTER_MONGODB_QUERY_TIMEOUT")
+	_ = viper.BindEnv("log.level", "MDBEXPORTER_LOG_LEVEL")
+	_ = viper.BindEnv("log.encoding", "MDBEXPORTER_LOG_ENCODING")
+	_ = viper.BindEnv("bind", "MDBEXPORTER_BIND")
+	_ = viper.BindEnv("metricsPath", "MDBEXPORTER_METRICSPATH")
+}
+
+func main() {
+	flag.Parse()
+	initConfig()
+
+	c, conf, err := buildCollector()
+	if err != nil {
+		panic(err)
+	}
+
+	prometheus.MustRegister(c)
+	promCollector = c
+	_ = c.StartCacheInvalidator()
+	srv = buildHTTPServer(prometheus.DefaultGatherer, conf)
+	err = srv.ListenAndServe()
+
+	// Only panic if we have a net error
+	if _, ok := err.(*net.OpError); ok {
+		panic(err)
+	} else {
+		os.Stderr.WriteString(err.Error() + "\n")
+	}
+}
 
 func buildCollector() (*collector.Collector, config.Config, error) {
 	var configVersion float32
@@ -110,33 +131,6 @@ func buildHTTPServer(reg prometheus.Gatherer, conf config.Config) *http.Server {
 
 	srv := http.Server{Addr: conf.GetBindAddr(), Handler: mux}
 	return &srv
-}
-
-func main() {
-	_ = rootCmd.Execute()
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&uri, "uri", "u", config.DefaultMongoDBURI, "MongoDB URI (default is mongodb://localhost:27017). Use MDBEXPORTER_SERVER_%d_MONGODB_URI envs if you target multiple server")
-	rootCmd.PersistentFlags().StringVarP(&configPath, "file", "f", "", "config file (default is $HOME/.mongodb_query_exporter/config.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", config.DefaultLogLevel, "Define the log level (default is warning) [debug,info,warn,error]")
-	rootCmd.PersistentFlags().StringVarP(&logEncoding, "log-encoding", "e", config.DefaultLogEncoder, "Define the log format (default is json) [json,console]")
-	rootCmd.PersistentFlags().StringVarP(&bind, "bind", "b", config.DefaultBindAddr, "Address to bind http server (default is :9412)")
-	rootCmd.PersistentFlags().StringVarP(&metricsPath, "path", "p", config.DefaultMetricsPath, "Metric path (default is /metrics)")
-	rootCmd.PersistentFlags().DurationVarP(&queryTimeout, "query-timeout", "t", config.DefaultQueryTimeout, "Timeout for MongoDB queries")
-	_ = viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
-	_ = viper.BindPFlag("log.encoding", rootCmd.PersistentFlags().Lookup("log-encoding"))
-	_ = viper.BindPFlag("bind", rootCmd.PersistentFlags().Lookup("bind"))
-	_ = viper.BindPFlag("metricsPath", rootCmd.PersistentFlags().Lookup("path"))
-	_ = viper.BindPFlag("mongodb.uri", rootCmd.PersistentFlags().Lookup("uri"))
-	_ = viper.BindPFlag("mongodb.queryTimeout", rootCmd.PersistentFlags().Lookup("query-timeout"))
-	_ = viper.BindEnv("mongodb.uri", "MDBEXPORTER_MONGODB_URI")
-	_ = viper.BindEnv("global.queryTimeout", "MDBEXPORTER_MONGODB_QUERY_TIMEOUT")
-	_ = viper.BindEnv("log.level", "MDBEXPORTER_LOG_LEVEL")
-	_ = viper.BindEnv("log.encoding", "MDBEXPORTER_LOG_ENCODING")
-	_ = viper.BindEnv("bind", "MDBEXPORTER_BIND")
-	_ = viper.BindEnv("metricsPath", "MDBEXPORTER_METRICSPATH")
 }
 
 func initConfig() {

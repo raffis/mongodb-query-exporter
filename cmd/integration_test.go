@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -94,16 +93,13 @@ func executeIntegrationTest(t *testing.T, test integrationTest) {
 	setupTestData(t, client)
 
 	os.Setenv("MDBEXPORTER_SERVER_0_MONGODB_URI", container.URI)
-	args := []string{
-		"-f", test.configPath,
+	os.Args = []string{
+		"mongodb_query_exporter",
+		fmt.Sprintf("--file=%s", test.configPath),
 	}
 
-	b := bytes.NewBufferString("")
-	rootCmd.SetOut(b)
-	rootCmd.SetArgs(args)
-
 	go func() {
-		assert.NoError(t, rootCmd.Execute())
+		main()
 	}()
 
 	//binding is blocking, do this async but wait 200ms for tcp port to be open
