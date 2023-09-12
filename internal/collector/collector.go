@@ -428,7 +428,17 @@ func (c *Collector) aggregate(aggregation *Aggregation, srv *server, ch chan<- p
 }
 
 func createMetric(srv *server, metric *Metric, result AggregationResult) (prometheus.Metric, error) {
-	value, err := metric.getValue(result)
+	var (
+		value float64
+		err   error
+	)
+
+	if metric.Value == "" && metric.OverrideEmpty {
+		value = float64(metric.EmptyValue)
+	} else {
+		value, err = metric.getValue(result)
+	}
+
 	if err != nil {
 		return nil, err
 	}
