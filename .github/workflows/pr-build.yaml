@@ -118,7 +118,7 @@ jobs:
         run: |
           profiles=$(ls config/tests/cases | jq -R -s -c 'split("\n")[:-1]')
           echo $profiles
-          echo "::set-output name=matrix::$profiles"  
+          echo "profiles=$profiles" >> $GITHUB_OUTPUT
  
   test-chart: 
     runs-on: ubuntu-latest
