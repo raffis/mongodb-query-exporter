@@ -12,7 +12,6 @@ permissions: {}
 
 jobs:
   fossa:
-    name: FOSSA
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
@@ -29,7 +28,6 @@ jobs:
           github-token: ${{ github.token }}
 
   codeql:
-    name: CodeQL
     runs-on: ubuntu-latest
     permissions:
       contents: read # for actions/checkout to fetch code
