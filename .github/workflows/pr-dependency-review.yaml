@@ -1,4 +1,4 @@
-name: dependency_review
+name: pr-dependency-review
 on: [pull_request]
 
 permissions:

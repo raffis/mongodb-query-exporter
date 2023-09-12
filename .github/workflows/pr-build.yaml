@@ -204,10 +204,7 @@ jobs:
       - name: Debug failure
         if: failure()
         run: |
-          kubectl -n mongodb get pods
-          kubectl -n mongodb-system get pods
-          kubectl -n mongodb describe pods
-          kubectl -n mongodb-system describe pods
-          kubectl -n mongodb get svc
+          kubectl -n mongo-system get pods
+          kubectl -n mongo-system describe pods
           kubectl -n kube-system get pods
-          kubectl -n mongodb-system logs deploy/mongodb-query-exporter
+          kubectl -n mongo-system logs deploy/mongodb-query-exporter
