@@ -205,6 +205,6 @@ jobs:
         if: failure()
         run: |
           kubectl -n mongo-system get pods
-          kubectl -n mongo-system describe pods
+          kubectl -n mongo-system get pods -o yaml
           kubectl -n kube-system get pods
           kubectl -n mongo-system logs deploy/mongodb-query-exporter
