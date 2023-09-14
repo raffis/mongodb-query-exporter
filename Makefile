@@ -82,7 +82,7 @@ kind-test: ## Deploy including test
 	kind load docker-image ${IMG} --name ${CLUSTER}
 	kubectl --context kind-${CLUSTER} -n mongo-system delete pods --all
 	kustomize build config/tests/cases/${TEST_PROFILE} --enable-helm | kubectl --context kind-${CLUSTER} apply -f -	
-	kubectl --context kind-${CLUSTER} -n mongo-system wait --for=jsonpath='{.status.conditions[1].reason}'=PodCompleted pods -l app.kubernetes.io/managed-by!=Helm -l verify=yes --timeout=3m
+	kubectl --context kind-${CLUSTER} -n mongo-system wait --allow-missing-template-keys=true --for=jsonpath='{.status.conditions[1].reason}'=PodCompleted pods -l app.kubernetes.io/managed-by!=Helm -l verify=yes --timeout=3m
 	kustomize build config/tests/cases/${TEST_PROFILE} --enable-helm | kubectl --context kind-${CLUSTER} delete -f -	
 
 .PHONY: deploy

@@ -190,7 +190,6 @@ jobs:
           path: /tmp
       - name: Load image
         run: |
-          kubectl version
           docker load --input /tmp/exporter-container.tar
           docker image ls -a
       - name: Setup Kubernetes
