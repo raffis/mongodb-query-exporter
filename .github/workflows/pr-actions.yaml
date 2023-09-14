@@ -1,4 +1,4 @@
-name: check-actions
+name: pr-actions
 
 permissions: {}
 
@@ -8,7 +8,7 @@ on:
       - 'master'
 
 jobs:
-  check:
+  ensure-sha-pinned:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner

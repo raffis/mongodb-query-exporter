@@ -75,6 +75,8 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    outputs:
+      profiles: ${{ steps.profiles.outputs.profiles }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@55d479fb1c5bcad5a4f9099a5d9f37c8857b2845 # v2.4.1
@@ -118,7 +120,7 @@ jobs:
         run: |
           profiles=$(ls config/tests/cases | jq -R -s -c 'split("\n")[:-1]')
           echo $profiles
-          echo "::set-output name=matrix::$profiles"  
+          echo "profiles=$profiles" >> $GITHUB_OUTPUT
  
   test-chart: 
     runs-on: ubuntu-latest
@@ -202,10 +204,7 @@ jobs:
       - name: Debug failure
         if: failure()
         run: |
-          kubectl -n mongodb get pods
-          kubectl -n mongodb-system get pods
-          kubectl -n mongodb describe pods
-          kubectl -n mongodb-system describe pods
-          kubectl -n mongodb get svc
+          kubectl -n mongo-system get pods
+          kubectl -n mongo-system get pods -o yaml
           kubectl -n kube-system get pods
-          kubectl -n mongodb-system logs deploy/mongodb-query-exporter
+          kubectl -n mongo-system logs deploy/mongodb-query-exporter
