@@ -9,6 +9,10 @@
       ]
   },
   "stabilityDays": 3,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
   "packageRules": [
     {
       "matchPaths": ["**"],
