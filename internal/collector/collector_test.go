@@ -275,6 +275,47 @@ func TestInitializeMetrics(t *testing.T) {
 			`,
 		},
 		{
+			name: "Empty result and overrideEmpty is not set results in no metric",
+			aggregation: &Aggregation{
+				Metrics: []*Metric{
+					{
+						Name:   "no_result",
+						Type:   "gauge",
+						Help:   "foobar",
+						Value:  "total",
+						Labels: []string{"foo"},
+					},
+				},
+				Pipeline: "[{\"$match\":{\"foo\":\"bar\"}}]",
+			},
+			docs:     []interface{}{},
+			expected: ``,
+		},
+		{
+			name: "Metric without a value but overrideEmpty is still created",
+			aggregation: &Aggregation{
+				Metrics: []*Metric{
+					{
+						Name:          "simple_info_metric",
+						Type:          "gauge",
+						Help:          "foobar",
+						OverrideEmpty: true,
+						EmptyValue:    1,
+						Labels:        []string{"foo"},
+					},
+				},
+				Pipeline: "[{\"$match\":{\"foo\":\"bar\"}}]",
+			},
+			docs: []interface{}{AggregationResult{
+				"foo": "bar",
+			}},
+			expected: `
+				# HELP simple_info_metric foobar
+				# TYPE simple_info_metric gauge
+				simple_info_metric{foo="bar",server="main"} 1
+			`,
+		},
+		{
 			name: "Export multiple metrics from the same aggregation",
 			aggregation: &Aggregation{
 				Metrics: []*Metric{

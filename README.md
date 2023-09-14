@@ -83,7 +83,7 @@ The metrics are by default exposed at `/metrics`.
 curl localhost:9412/metrics
 ```
 
-## Configuration
+## Exporter configuration
 
 The exporter is looking for a configuration in `~/.mongodb_query_exporter/config.yaml` and `/etc/mongodb_query_exporter/config.yaml` or if set the path from the env `MDBEXPORTER_CONFIG`.
 
@@ -105,7 +105,7 @@ Note if you have multiple MongoDB servers you can inject an env variable for eac
 2. `MDBEXPORTER_SERVER_1_MONGODB_URI=mongodb://srv2:27017`
 3. ...
 
-### Configure your metrics
+## Configure metrics
 
 Since the v1.0.0 release you should use the config version v3.0 to profit from the latest features.
 See the configuration version matrix bellow.
@@ -219,6 +219,35 @@ aggregations:
 ```
 
 See more examples in the `/example` folder.
+
+### Info metrics
+
+By defining no actual value field but set `overrideEmpty` to `true` a metric can sill be exported
+with labels from the aggregation pipeline but the value is set to a static value taken from `emptyValue`.
+This is useful for exporting info metrics which can later be used for join queries.
+
+```yaml
+servers:
+- name: main
+  uri: mongodb://localhost:27017
+aggregations:
+- database: mydb
+  collection: objects
+  metrics:
+  - name: myapp_info
+    help: 'Info metric'
+    overrideEmpty: true
+    emptyValue: 1
+    labels:
+    - mylabel1
+    - mylabel2
+    constLabels:
+      region: eu-central-1
+  cache: 0
+  mode: pull
+  pipeline: `...`
+```
+
 
 ## Supported config versions
 
