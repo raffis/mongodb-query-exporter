@@ -13,7 +13,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.23.0
 	github.com/tj/assert v0.0.3
 	go.mongodb.org/mongo-driver v1.12.1
-	go.uber.org/zap v1.25.0
+	go.uber.org/zap v1.26.0
 )
 
 require (
