@@ -10,7 +10,7 @@ require (
 	github.com/prometheus/common v0.42.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
-	github.com/testcontainers/testcontainers-go v0.24.0
+	github.com/testcontainers/testcontainers-go v0.24.1
 	github.com/tj/assert v0.0.3
 	go.mongodb.org/mongo-driver v1.12.1
 	go.uber.org/zap v1.26.0
