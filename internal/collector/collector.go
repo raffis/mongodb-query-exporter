@@ -251,7 +251,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 				if err == nil {
 					result = ResultSuccess
 				} else {
-					c.logger.Errorf("failed to generate metric: %s", err)
+					c.logger.Errorf("failed to generate metric", "err", err, "name", srv.name)
 
 					result = ResultError
 				}
