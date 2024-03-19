@@ -22,8 +22,7 @@ spec:
           {{- toYaml .Values.podAnnotations | nindent 8 }}
         {{- end }}
       labels:
-        app.kubernetes.io/name: {{ include "mongodb-query-exporter.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- include "mongodb-query-exporter.labels" . | nindent 4 }}
     spec:
       serviceAccountName: {{ template "mongodb-query-exporter.serviceAccountName" . }}
       containers:
