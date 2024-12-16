@@ -1,4 +1,4 @@
-FROM gcr.io/distroless/static:nonroot@sha256:92d40eea0b5307a94f2ebee3e94095e704015fb41e35fc1fcbd1d151cc282222
+FROM gcr.io/distroless/static:nonroot@sha256:6cd937e9155bdfd805d1b94e037f9d6a899603306030936a3b11680af0c2ed58
 WORKDIR /
 COPY mongodb-query-exporter mongodb-query-exporter
 EXPOSE      9412
