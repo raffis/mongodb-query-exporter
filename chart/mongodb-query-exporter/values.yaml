@@ -88,6 +88,9 @@ secretMounts: []
 # Add additional containers (sidecars)
 extraContainers:
 
+# Add additional volumes
+extraVolumes:
+
 podAnnotations: {}
 #  prometheus.io/scrape: "true"
 #  prometheus.io/port: "metrics"
