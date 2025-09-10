@@ -142,14 +142,15 @@ func TestInitializeMetrics(t *testing.T) {
 			aggregation: &Aggregation{
 				Metrics: []*Metric{
 					{
-						Name: "simple_gauge_value_not_found",
-						Type: "gauge",
+						Name:  "simple_gauge_value_not_found",
+						Type:  "gauge",
+						Value: "total",
 					},
 				},
 				Pipeline: "[{\"$match\":{\"foo\":\"bar\"}}]",
 			},
 			docs: []interface{}{AggregationResult{}},
-			//error: "1 error occurred:\n\t* value not found in result set\n\n",
+			//error: "value for metric simple_gauge_value_not_found with key total not found in result set",
 			expected: ``,
 		},
 		{

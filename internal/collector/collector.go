@@ -76,8 +76,7 @@ type Metric struct {
 var (
 	//Only Gauge is a supported metric types
 	ErrInvalidType = errors.New("unknown metric type provided. Only gauge is supported")
-	//The value was not found in the aggregation result set
-	ErrValueNotFound = errors.New("value not found in result set")
+	
 	//No cached metric available
 	ErrNotCached = errors.New("metric not available from cache")
 )
@@ -471,7 +470,7 @@ func (metric *Metric) getValue(result AggregationResult) (float64, error) {
 		}
 	}
 
-	return 0, ErrValueNotFound
+	return 0, fmt.Errorf("value for metric %s with key %s not found in result set", metric.Name, metric.Value)
 }
 
 func (metric *Metric) getLabels(result AggregationResult) ([]string, error) {
