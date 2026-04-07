@@ -13,7 +13,7 @@ jobs:
           egress-policy: audit
 
       - name: Trivy fs scan
-        uses: aquasecurity/trivy-action@2b6a709cf9c4025c5438138008beaddbb02086f0 # 0.14.0
+        uses: aquasecurity/trivy-action@2297a1b967ecc05ba2285eb6af56ab4da554ecae # 0.14.0
         with:
           scan-type: 'fs'
           ignore-unfixed: true
